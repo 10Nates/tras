@@ -103,8 +103,10 @@ __LIST OF COMMANDS__
  
 ### `@TRAS commands`
 > View and manage custom server commands, managing requires "Manage Messages" perms.
+> Custom commands feature requires TRAS Deluxe TBS.
 > 
-> Format: `@TRAS commands [manage/view] [set/delete] [trigger] [reply]`
+> Format: `@TRAS commands [manage/view] [(manage)...]`
+> Format (manage): `@TRAS commands manage [set/delete/schedule] [(set/delete)trigger//(schedule)time of day (hh:mm:ss)] [(set/schedule)reply]`
 
 ### `@TRAS rank` 
 > Shows your rank, lets your reset your rank, and allows you to roll dice for a new rank if it's enabled. 
@@ -129,8 +131,8 @@ __LIST OF COMMANDS__
 > 
 > Format: `@TRAS combinations [words/characters] [items]`
  
-### `@TRAS`
-> Responds "The ceiling"
+### Default response
+> Responds "The ceiling >:)"
  
 ### Generated messages
 > Random generated messages that can be toggled to randomly to be said in response to messages. 

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/andersfylling/disgord"
@@ -42,5 +44,9 @@ func main() {
 }
 
 func parseCommand(msg *disgord.Message, session *disgord.Session) {
-	msg.Reply(context.Background(), *session, "Hello, "+msg.Author.Username)
+	cstr := msg.Content
+	rsplitstr := regexp.MustCompile(`([^\\])( )`).ReplaceAllString(cstr, "$1\n")
+	carr := strings.Split(rsplitstr, "\n")
+
+	fmt.Println(carr)
 }

@@ -12,6 +12,8 @@ import (
 	"github.com/andersfylling/disgord/std"
 )
 
+const BotID = "462051981863682048"
+
 func main() {
 	//load client
 	client := disgord.New(disgord.Config{
@@ -48,5 +50,66 @@ func parseCommand(msg *disgord.Message, session *disgord.Session) {
 	rsplitstr := regexp.MustCompile(`([^\\])( )`).ReplaceAllString(cstr, "$1\n")
 	carr := strings.Split(rsplitstr, "\n")
 
-	fmt.Println(carr)
+	args := []string{}
+	argsl := []string{}
+
+	for i := 0; i < len(carr); i++ {
+		if !strings.Contains(carr[i], BotID) {
+			args = append(args, carr[i])
+			argsl = append(argsl, strings.ToLower(carr[i]))
+		}
+	}
+
+	switch argsl[0] {
+	case "help":
+
+	case "about":
+
+	case "oof":
+
+	case "f":
+
+	case "pi":
+
+	case "big":
+
+	case "jumble":
+
+	case "emojify":
+
+	case "flagify":
+
+	case "superscript":
+
+	case "unicodify":
+
+	case "bold":
+
+	case "replace":
+
+	case "overcomplicate":
+
+	case "word":
+		if argsl[1] == "info" {
+
+		}
+	case "ascii":
+		if argsl[1] == "art" {
+
+		}
+	case "commands":
+
+	case "rank":
+
+	case "set":
+		if argsl[1] == "nickname" {
+
+		}
+	case "speak":
+
+	case "combinations":
+
+	default:
+
+	}
 }

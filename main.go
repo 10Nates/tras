@@ -45,7 +45,7 @@ func main() {
 		})
 }
 
-func parseCommand(msg *disgord.Message, session *disgord.Session) {
+func parseCommand(msg *disgord.Message, s *disgord.Session) {
 	cstr := msg.Content
 	rsplitstr := regexp.MustCompile(`([^\\])( )`).ReplaceAllString(cstr, "$1\n")
 	carr := strings.Split(rsplitstr, "\n")
@@ -58,6 +58,11 @@ func parseCommand(msg *disgord.Message, session *disgord.Session) {
 			args = append(args, carr[i])
 			argsl = append(argsl, strings.ToLower(carr[i]))
 		}
+	}
+
+	if len(args) < 1 {
+		args = append(args, "")
+		argsl = append(argsl, "")
 	}
 
 	switch argsl[0] {
@@ -90,11 +95,11 @@ func parseCommand(msg *disgord.Message, session *disgord.Session) {
 	case "overcomplicate":
 
 	case "word":
-		if argsl[1] == "info" {
+		if len(argsl) > 1 && argsl[1] == "info" {
 
 		}
 	case "ascii":
-		if argsl[1] == "art" {
+		if len(argsl) > 1 && argsl[1] == "art" {
 
 		}
 	case "commands":
@@ -102,7 +107,7 @@ func parseCommand(msg *disgord.Message, session *disgord.Session) {
 	case "rank":
 
 	case "set":
-		if argsl[1] == "nickname" {
+		if len(argsl) > 1 && argsl[1] == "nickname" {
 
 		}
 	case "speak":
@@ -110,6 +115,6 @@ func parseCommand(msg *disgord.Message, session *disgord.Session) {
 	case "combinations":
 
 	default:
-
+		baseReply(msg, s, "The ceiling >:)")
 	}
 }

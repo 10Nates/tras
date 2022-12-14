@@ -24,7 +24,7 @@ func main() {
 
 	//startup message
 	client.Gateway().BotReady(func() {
-		fmt.Println("Bot ready at " + time.Now().Local().Format(time.RFC1123))
+		fmt.Println("Bot started @ " + time.Now().Local().Format(time.RFC1123))
 		client.UpdateStatusString("@me help")
 	})
 
@@ -71,9 +71,11 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 	case "about":
 
 	case "oof":
-
+		// big OOF
+		baseReply(msg, s, "oof oof oof     oof oof oof     oof oof oof\noof        oof     oof        oof     oof\noof        oof     oof        oof     oof oof oof\noof        oof     oof        oof     oof\noof oof oof     oof oof oof     oof")
 	case "f":
-
+		// big F
+		baseReply(msg, s, "F F F F F F\nF F \nF F F F F F\nF F\nF F")
 	case "pi":
 
 	case "big":
@@ -97,10 +99,14 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 	case "word":
 		if len(argsl) > 1 && argsl[1] == "info" {
 
+		} else {
+			defaultResponse(msg, s)
 		}
 	case "ascii":
 		if len(argsl) > 1 && argsl[1] == "art" {
 
+		} else {
+			defaultResponse(msg, s)
 		}
 	case "commands":
 
@@ -109,12 +115,14 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 	case "set":
 		if len(argsl) > 1 && argsl[1] == "nickname" {
 
+		} else {
+			defaultResponse(msg, s)
 		}
 	case "speak":
 
 	case "combinations":
 
 	default:
-		baseReply(msg, s, "The ceiling >:)")
+		defaultResponse(msg, s)
 	}
 }

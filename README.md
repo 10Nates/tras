@@ -132,7 +132,7 @@ __LIST OF COMMANDS__
 > Format: `@TRAS combinations [words/characters] [items]`
  
 ### Default response
-> Responds "The ceiling >:)"
+> Responds "What's up?"
  
 ### Generated messages
 > Random generated messages that can be toggled to randomly to be said in response to messages. 

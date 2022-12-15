@@ -81,7 +81,11 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 	case "help":
 		helpResponse(msg, s)
 	case "about":
-		aboutResponse(msg, s)
+		if len(argsl) > 1 && argsl[1] == "nocb" {
+			aboutResponse(msg, s, true)
+		} else {
+			aboutResponse(msg, s, false)
+		}
 	case "oof":
 		// big OOF
 		baseReply(msg, s, "oof oof oof     oof oof oof     oof oof oof\noof        oof     oof        oof     oof\noof        oof     oof        oof     oof oof oof\noof        oof     oof        oof     oof\noof oof oof     oof oof oof     oof")
@@ -89,7 +93,7 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 		// big F
 		baseReply(msg, s, "F F F F F F\nF F \nF F F F F F\nF F\nF F")
 	case "pi":
-
+		piResponse(msg, s)
 	case "big":
 
 	case "jumble":

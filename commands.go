@@ -3,22 +3,67 @@ package main
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"strings"
 
 	"github.com/andersfylling/disgord"
+	"github.com/andersfylling/snowflake/v5"
 )
 
 // This file implements all the functions that directly reply to the commands
 
-const BOT_ABOUT_INFO = `<Created_by Nathan Hedge>
-
+const BOT_ABOUT_INFO = `
+'''prolog
+Text Response Automation System
+''''''md
+<Version 3.0.0>
+<Created_by Nathan Hedge>
+''''''py
+#################'''['''md
 [Website](https://tras.almostd.one/)
+'''](https://tras.almostd.one/)['''md
 [Add Link](https://bit.ly/gotras)
+'''](https://bit.ly/gotras)['''md
 [Top.gg Page](https://top.gg/bot/494273862427738113)
+'''](https://top.gg/bot/494273862427738113)['''md
 [Git Repo](https://github.com/10Nates/tras)
-
+'''](https://github.com/10Nates/tras)'''py
+#################'''['''md
 [Legal]()
 [ ](TRAS operates under the MIT license)
-[ ](https://github.com/10Nates/tras/LICENSE)`
+[ ](https://github.com/10Nates/tras/LICENSE)
+'''](https://github.com/10Nates/tras/LICENSE)
+`
+
+var HELP_COMMAND_RESPONSES = []string{
+	"Here's your help hotline, hot and ready!",
+	"Looking for lessons? You're in luck, here's a list!",
+	"Confused and unsure? These commands will be your cure!",
+	"Introducing this informative index!",
+	"This list will lend a hand, just take a look and understand!",
+	"Need some guidance? This directory's the key!",
+	"This register has the answer, just take a look and you'll be a master!",
+	"Looking for conclusions? This catalog has them all!",
+	"Lost in a fog? These functions will clear the smog!",
+}
+
+type Division string
+
+func (d *Division) Snowflake() snowflake.Snowflake {
+	return snowflake.ParseSnowflakeString(strings.Split(string(*d), "-")[1])
+}
+
+func (d *Division) Type() byte {
+	return strings.Split(string(*d), "-")[0][0]
+}
+
+// helpers
+func getDivision(msg *disgord.Message) Division {
+	if msg.GuildID != 0 {
+		return Division("G-" + msg.GuildID.HexString())
+	}
+	return Division("U-" + msg.Author.ID.HexString()) // if it is not a guild, use the author's ID as the ID
+}
 
 // templates
 func msgerr(err error, msg *disgord.Message, s *disgord.Session) {
@@ -86,7 +131,7 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 			},
 			{
 				Name:  "_ _\n@TRAS about",
-				Value: "Gives information about the bot.",
+				Value: "Gives information about the bot. Add \"NoCB\" for devices that don't support links with command blocks.",
 			},
 		},
 	}
@@ -110,7 +155,7 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 			},
 			{
 				Name:  "_ _\n@TRAS big",
-				Value: "Make a larger version of word/text made of the word. Starts getting wonky with emojis. Becomes file over 520 characters. You can enable thin letters with -t or --thin.\n*Format: txt.big [-t|--thin (pushes other vars forward)] [word] [text (optional)]*",
+				Value: "Make a larger version of word/text made of the word. Starts getting wonky with emojis. Becomes file over 520 characters. You can enable thin letters with -t or --thin.\n*Format: @TRAS big (-t/--thin) [letter] [text]*",
 			},
 			{
 				Name:  "_ _\n@TRAS jumble",
@@ -146,15 +191,15 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 			},
 			{
 				Name:  "_ _\n@TRAS word info",
-				Value: "Get the definition or Part-of-Speech of a word.\n*Format: @TRAS word info [def|pos] [word]*",
+				Value: "Get the definition or Part-of-Speech of a word.\n*Format: @TRAS word info [definition/pos] [word]*",
 			},
 			{
 				Name:  "_ _\n@TRAS ascii art",
-				Value: "Generate ascii art. Over 15 characters responds with a file.\n*Format: @TRAS ascii art [text|{Font:[Font (use '_' as space)]}|{getFonts}] [text]*",
+				Value: "Generate ascii art. Over 15 characters responds with a file.\n*Format: @TRAS ascii art [text/{font:[Font (use \"\\ \" as space)]}/{getFonts}] [(font)text]*",
 			},
 			{
 				Name:  "_ _\n@TRAS commands",
-				Value: "View and manage custom server commands, managing requires 'Manage Messages' perms.\n*Format: @TRAS commands [manage|view] [set|delete] [activator] [reply (multiword)]*",
+				Value: "View and manage custom server commands, managing requires 'Manage Messages' perms. Scheduled commands feature requires TRAS Deluxe TBD.\n*Format:@TRAS commands [manage/view] [(manage)...]*\n*Format (manage): @TRAS commands manage [set/delete/schedule] [(set/delete)trigger//(schedule)time of day (hh:mm:ss)] [(set/schedule)reply]*",
 			},
 			{
 				Name:  "_ _\n@TRAS rank",
@@ -162,15 +207,15 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 			},
 			{
 				Name:  "_ _\n@TRAS set nickname",
-				Value: "Set the bot's Nickname on the server. Reset with '{RESET}'. Requires 'Manage Messages' or 'Change Nicknames'.\n*Format: @TRAS set nickname [nickname|{RESET}]*",
+				Value: "Set the bot's Nickname on the server. Reset with '{RESET}'. Requires 'Manage Messages' or 'Change Nicknames'.\n*Format: @TRAS set nickname [nickname/{RESET}]*",
 			},
 			{
 				Name:  "_ _\n@TRAS speak",
-				Value: "Generate a sentence, repeat messages (requires send perms), and toggle and get status of random generated messages. Toggling requires 'Manage Messages' perms. Random messages off by default.\n*Format: @TRAS speak [generate|repeat|toggleRandSpeak|randSpeakStatus] [channel ID or channel tag] [message]*",
+				Value: "Generate a sentence, repeat messages (requires send perms), and toggle and get status of fallback generated messages. Toggling requires 'Manage Messages' perms. Fallback messages off by default.\n*Format: @TRAS speak [generate/randomspeak] [(randomspeak)on/off/status//(generate)starter]*",
 			},
 			{
 				Name:  "_ _\n@TRAS combinations",
-				Value: "Sends file with all possible combinations of the units you have selected and given.\n*Format: @TRAS combinations [words|characters] [items]*",
+				Value: "Sends file with all possible combinations of the units you have selected and given.\n*Format: @TRAS combinations [words/characters] [items]*",
 			},
 		},
 	}
@@ -190,6 +235,16 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 			},
 		},
 	}
+
+	ccField, err := getGuildCustomCommandsFields(getDivision(msg)) // compatible with user and guild
+	if err != nil {
+		ccField = []*disgord.EmbedField{
+			{
+				Name:  "_ _\nError fetching custom commands",
+				Value: err.Error(),
+			},
+		}
+	}
 	eFourth := &disgord.Embed{
 
 		Color: 0x0096ff,
@@ -197,31 +252,53 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 			Name: "--Server-Specific Commands--",
 		},
 		Description: "*For the server this message was activated from*",
-		// Fields:      getGuildCustomCommandsFields(msg.GuildID),
-		// TODO: add fields for custom commands
-
+		Fields:      ccField,
 	}
 
 	// Has to be several messages due to embed size limitations
-	baseReply(msg, s, "I slid a command list into your DMs.")
-	baseEmbedDMReply(msg, s, eFirst, "Your DMs are not open! Feel free to check out the commands in  any of the linked sites at @TRAS about.")
+	baseReply(msg, s, HELP_COMMAND_RESPONSES[rand.Intn(len(HELP_COMMAND_RESPONSES))]) // random help command response
+	baseEmbedDMReply(msg, s, eFirst, "Your DMs are not open! Feel free to check out the commmands on https://tras.almostd.one.")
 	baseEmbedDMReply(msg, s, eSecond, "")
 	baseEmbedDMReply(msg, s, eThird, "")
 	baseEmbedDMReply(msg, s, eFourth, "")
 }
 
-func aboutResponse(msg *disgord.Message, s *disgord.Session) {
+func aboutResponse(msg *disgord.Message, s *disgord.Session, nocb bool) {
+	content := strings.ReplaceAll(BOT_ABOUT_INFO, "'", "`")
+	if nocb {
+		content = strings.ReplaceAll(content, "```md", "")
+		content = strings.ReplaceAll(content, "```prolog", "")
+		content = strings.ReplaceAll(content, "```py", "")
+		content = strings.ReplaceAll(content, "```", "")
+	}
 	embed := &disgord.Embed{
 		Color: 0x0096ff,
 		Author: &disgord.EmbedAuthor{
 			Name:    "About TRAS",
 			IconURL: BotPFP,
 		},
-		Title:       "Text Response Automation System",
-		Description: "```md\n<Version " + BOT_VERSION + ">\n" + BOT_ABOUT_INFO + "```",
+		Description: content,
 		Thumbnail: &disgord.EmbedThumbnail{
 			URL: "https://tras.almostd.one/img/traslogo.png",
 		},
 	}
+
+	err := msg.React(context.Background(), *s, "👍")
+	if err != nil {
+		println(err.Error())
+	}
+	baseEmbedDMReply(msg, s, embed, "Your DMs are not open! Feel free to find the information on https://tras.almostd.one.")
+}
+
+func piResponse(msg *disgord.Message, s *disgord.Session) {
+	embed := &disgord.Embed{
+		Color:       0x0096ff,
+		Title:       "Here's the first 1 million (10⁶) digits of Pi.",
+		Description: "First 20: `3.1415926535897932384`\n\n[Download the rest](https://gist.githubusercontent.com/10Nates/95788a4abdd525d7d4dc15d3d45e32ae/raw/80987b58467d10353f0c2bc4ab2d1df8f127ca1c/pi-1mil.txt)",
+	}
+	// on TRAS 2, this was a file attachment, however
+	// because of how text files appear now, it looks bad.
+	// A link works the same regardless.
+
 	baseEmbedReply(msg, s, embed)
 }

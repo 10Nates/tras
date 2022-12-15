@@ -32,7 +32,8 @@ __LIST OF COMMANDS__
 > Summons a help list.
  
 ### `@TRAS about`
-> Gives information about the bot.
+> Gives information about the bot. 
+> Add "NoCB" for devices that don't support links with command blocks.
  
 ### `@TRAS oof`
 > Mega OOF
@@ -103,7 +104,7 @@ __LIST OF COMMANDS__
  
 ### `@TRAS commands`
 > View and manage custom server commands, managing requires "Manage Messages" perms.
-> Custom commands feature requires TRAS Deluxe TBS.
+> Custom commands feature requires TRAS Deluxe TBD.
 > 
 > Format: `@TRAS commands [manage/view] [(manage)...]`
 > Format (manage): `@TRAS commands manage [set/delete/schedule] [(set/delete)trigger//(schedule)time of day (hh:mm:ss)] [(set/schedule)reply]`
@@ -124,7 +125,7 @@ __LIST OF COMMANDS__
 > Generate a sentence, plus toggle and get the status of random generated messages. 
 > Toggling requires "Manage Messages" permissions. Random messages are off by default.
 > 
-> Format: `@TRAS speak [generate/random speak] [(random speak)on/off/status//(generate)starter]`
+> Format: `@TRAS speak [generate/randomspeak] [(randomspeak)on/off/status//(generate)starter]`
  
 ### `@TRAS combinations`
 > Sends file with all possible combinations of the units you have selected and given.
@@ -137,7 +138,7 @@ __LIST OF COMMANDS__
 ### Generated messages
 > Random generated messages that can be toggled to randomly to be said in response to messages. 
 > Random messages will not reply to commands.
-> Toggle random messages with `@TRAS speak random speak [on/off]`
+> Toggle random messages with `@TRAS speak randomspeak [on/off]`
 
 <br>
 <br>

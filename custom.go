@@ -2,19 +2,18 @@ package main
 
 import (
 	"github.com/andersfylling/disgord"
-	"github.com/andersfylling/snowflake/v5"
 )
 
 // This file implements all the functions for handling custom commands
 
 type customCommand struct { // also used in database
-	key   string
-	val   string
-	guild uint64 // snowflake
+	key string
+	val string
+	div Division
 }
 
-func getGuildCustomCommandsFields(guildID snowflake.Snowflake) ([]*disgord.EmbedField, error) {
-	cmds, err := getCustomCommands(guildID)
+func getGuildCustomCommandsFields(DID Division) ([]*disgord.EmbedField, error) {
+	cmds, err := getCustomCommands(DID)
 	if err != nil {
 		return nil, err
 	}
@@ -45,6 +44,6 @@ func getGuildCustomCommandsFields(guildID snowflake.Snowflake) ([]*disgord.Embed
 	return newEmbedFields, nil
 }
 
-func getCustomCommands(guildID snowflake.Snowflake) ([]*customCommand, error) {
+func getCustomCommands(guildID Division) ([]*customCommand, error) {
 	return []*customCommand{}, nil // TODO: implement custom commands
 }

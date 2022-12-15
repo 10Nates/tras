@@ -167,4 +167,4 @@ __GENERAL DETAILS__
 <br>
 <br>
 
-## Copyright (C) 2022 Nathan Hedge (@10Nates)
+## Copyright (c) 2022 Nathan B. (10Nates)

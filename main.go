@@ -12,18 +12,31 @@ import (
 	"github.com/andersfylling/disgord/std"
 )
 
-const BotID = "462051981863682048"
+const BOT_VERSION = "3.0.0"
+
+var BotID string
+var BotPFP string
 
 func main() {
 	//load client
 	client := disgord.New(disgord.Config{
 		BotToken: os.Getenv("Token"),
-		Intents:  disgord.IntentGuildMessages | disgord.IntentDirectMessages | disgord.IntentGuildMessageReactions | disgord.IntentDirectMessageReactions,
+		Intents: disgord.IntentGuildMessages | disgord.IntentDirectMessages |
+			disgord.IntentGuildMessageReactions | disgord.IntentDirectMessageReactions,
 	})
 	defer client.Gateway().StayConnectedUntilInterrupted()
 
 	//startup message
 	client.Gateway().BotReady(func() {
+		usr, err := client.CurrentUser().Get()
+		if err != nil {
+			panic(err) // Bot shouldn't start
+		}
+		BotID = usr.ID.String()
+		BotPFP, err = usr.AvatarURL(256, false)
+		if err != nil {
+			panic(err) // Bot shouldn't start
+		}
 		fmt.Println("Bot started @ " + time.Now().Local().Format(time.RFC1123))
 		client.UpdateStatusString("@me help")
 	})
@@ -38,9 +51,8 @@ func main() {
 
 	//on message with mention
 	client.Gateway().
-		WithMiddleware(content.NotByBot, content.ContainsBotMention).       // filter
-		MessageCreate(func(s disgord.Session, evt *disgord.MessageCreate) { // on message
-
+		WithMiddleware(content.NotByBot, content.ContainsBotMention, content.HasBotMentionPrefix). // filter
+		MessageCreate(func(s disgord.Session, evt *disgord.MessageCreate) {                        // on message
 			go parseCommand(evt.Message, &s)
 		})
 }
@@ -67,9 +79,9 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 
 	switch argsl[0] {
 	case "help":
-
+		helpResponse(msg, s)
 	case "about":
-
+		aboutResponse(msg, s)
 	case "oof":
 		// big OOF
 		baseReply(msg, s, "oof oof oof     oof oof oof     oof oof oof\noof        oof     oof        oof     oof\noof        oof     oof        oof     oof oof oof\noof        oof     oof        oof     oof\noof oof oof     oof oof oof     oof")
@@ -113,7 +125,7 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 	case "rank":
 
 	case "set":
-		if len(argsl) > 1 && argsl[1] == "nickname" {
+		if len(argsl) > 1 && (argsl[1] == "nickname" || argsl[1] == "nick") {
 
 		} else {
 			defaultResponse(msg, s)

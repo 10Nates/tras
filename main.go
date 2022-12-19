@@ -12,8 +12,6 @@ import (
 	"github.com/andersfylling/disgord/std"
 )
 
-const BOT_VERSION = "3.0.0"
-
 var BotID string
 var BotPFP string
 
@@ -81,7 +79,7 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 	case "help":
 		helpResponse(msg, s)
 	case "about":
-		if len(argsl) > 1 && argsl[1] == "nocb" {
+		if len(argsl) > 1 && argsl[1] == "nocb" { // remove code blocks so iOS can click the links
 			aboutResponse(msg, s, true)
 		} else {
 			aboutResponse(msg, s, false)
@@ -99,15 +97,40 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 	case "jumble":
 
 	case "emojify":
-
+		if len(argsl) > 1 {
+			text := strings.Join(argsl[1:], " ") // case insensitive
+			emojifyResponse(text, msg, s)
+		} else {
+			baseReply(msg, s, "What would you like me to change to emojis?")
+		}
 	case "flagify":
-
+		if len(argsl) > 1 {
+			text := strings.Join(argsl[1:], " ") // case insensitive
+			flagifyResponse(text, msg, s)
+		} else {
+			baseReply(msg, s, "Ya gotta tell me what to flagify!")
+		}
 	case "superscript":
-
+		if len(argsl) > 1 {
+			text := strings.Join(args[1:], " ") // case sensitive
+			superScriptResponse(text, msg, s)
+		} else {
+			baseReply(msg, s, "What do you need to be superscripts?")
+		}
 	case "unicodify":
-
+		if len(argsl) > 1 {
+			text := strings.Join(args[1:], " ") // case sensitive
+			unicodifyResponse(text, msg, s)
+		} else {
+			baseReply(msg, s, "You need to tell me what to unicodify.")
+		}
 	case "bold":
-
+		if len(argsl) > 1 {
+			text := strings.Join(args[1:], " ") // case sensitive
+			boldResponse(text, msg, s)
+		} else {
+			baseReply(msg, s, "What needs bolding?")
+		}
 	case "replace":
 
 	case "overcomplicate":

@@ -6,12 +6,6 @@ import (
 
 // This file implements all the functions for handling custom commands
 
-type customCommand struct { // also used in database
-	key string
-	val string
-	div Division
-}
-
 func getGuildCustomCommandsFields(DID Division) ([]*disgord.EmbedField, error) {
 	cmds, err := getCustomCommands(DID)
 	if err != nil {
@@ -46,4 +40,13 @@ func getGuildCustomCommandsFields(DID Division) ([]*disgord.EmbedField, error) {
 
 func getCustomCommands(guildID Division) ([]*customCommand, error) {
 	return []*customCommand{}, nil // TODO: implement custom commands
+}
+
+func newCustomCommand(key string, val string, div Division) *customCommand {
+	return &customCommand{
+		key:     key,
+		val:     val,
+		divType: div.Type(), // U for user, G for guild
+		divID:   uint64(div.Snowflake()),
+	}
 }

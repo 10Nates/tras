@@ -7,55 +7,9 @@ import (
 	"strings"
 
 	"github.com/andersfylling/disgord"
-	"github.com/andersfylling/snowflake/v5"
 )
 
 // This file implements all the functions that directly reply to the commands
-
-const BOT_ABOUT_INFO = `
-'''prolog
-Text Response Automation System
-''''''md
-<Version 3.0.0>
-<Created_by Nathan Hedge>
-''''''py
-#################'''['''md
-[Website](https://tras.almostd.one/)
-'''](https://tras.almostd.one/)['''md
-[Add Link](https://bit.ly/gotras)
-'''](https://bit.ly/gotras)['''md
-[Top.gg Page](https://top.gg/bot/494273862427738113)
-'''](https://top.gg/bot/494273862427738113)['''md
-[Git Repo](https://github.com/10Nates/tras)
-'''](https://github.com/10Nates/tras)'''py
-#################'''['''md
-[Legal]()
-[ ](TRAS operates under the MIT license)
-[ ](https://github.com/10Nates/tras/LICENSE)
-'''](https://github.com/10Nates/tras/LICENSE)
-`
-
-var HELP_COMMAND_RESPONSES = []string{
-	"Here's your help hotline, hot and ready!",
-	"Looking for lessons? You're in luck, here's a list!",
-	"Confused and unsure? These commands will be your cure!",
-	"Introducing this informative index!",
-	"This list will lend a hand, just take a look and understand!",
-	"Need some guidance? This directory's the key!",
-	"This register has the answer, just take a look and you'll be a master!",
-	"Looking for conclusions? This catalog has them all!",
-	"Lost in a fog? These functions will clear the smog!",
-}
-
-type Division string
-
-func (d *Division) Snowflake() snowflake.Snowflake {
-	return snowflake.ParseSnowflakeString(strings.Split(string(*d), "-")[1])
-}
-
-func (d *Division) Type() byte {
-	return strings.Split(string(*d), "-")[0][0]
-}
 
 // helpers
 func getDivision(msg *disgord.Message) Division {
@@ -112,6 +66,8 @@ func baseEmbedDMReply(msg *disgord.Message, s *disgord.Session, embed *disgord.E
 }
 
 // handlers
+
+// simple response
 func defaultResponse(msg *disgord.Message, s *disgord.Session) {
 	baseReply(msg, s, "What's up?")
 }
@@ -301,4 +257,55 @@ func piResponse(msg *disgord.Message, s *disgord.Session) {
 	// A link works the same regardless.
 
 	baseEmbedReply(msg, s, embed)
+}
+
+// key value replace
+func emojifyResponse(text string, msg *disgord.Message, s *disgord.Session) {
+	respText := text
+	for k, v := range emojifyReplacements { // replace key with value
+		respText = strings.ReplaceAll(respText, k, v)
+	}
+
+	//respond
+	baseReply(msg, s, respText)
+}
+
+func flagifyResponse(text string, msg *disgord.Message, s *disgord.Session) {
+	respText := text
+	for k, v := range flagifyReplacements { // replace key with value
+		respText = strings.ReplaceAll(respText, k, v)
+	}
+
+	//respond
+	baseReply(msg, s, respText)
+}
+
+func superScriptResponse(text string, msg *disgord.Message, s *disgord.Session) {
+	respText := text
+	for k, v := range superScriptReplacements { // replace key with value
+		respText = strings.ReplaceAll(respText, k, v)
+	}
+
+	//respond
+	baseReply(msg, s, respText)
+}
+
+func unicodifyResponse(text string, msg *disgord.Message, s *disgord.Session) {
+	respText := text
+	for k, v := range unicodifyReplacements { // replace key with value
+		respText = strings.ReplaceAll(respText, k, v)
+	}
+
+	//respond
+	baseReply(msg, s, respText)
+}
+
+func boldResponse(text string, msg *disgord.Message, s *disgord.Session) {
+	respText := text
+	for k, v := range boldReplacements { // replace key with value
+		respText = strings.ReplaceAll(respText, k, v)
+	}
+
+	//respond
+	baseReply(msg, s, respText)
 }

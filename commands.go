@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"math"
 	"math/rand"
 	"strings"
+	"time"
 
 	"github.com/andersfylling/disgord"
 )
@@ -19,12 +21,26 @@ func getDivision(msg *disgord.Message) Division {
 	return Division("U-" + msg.Author.ID.HexString()) // if it is not a guild, use the author's ID as the ID
 }
 
+func getPerms(msg *disgord.Message) (disgord.PermissionBit, error) {
+	if msg.GuildID == 0 { // DMs
+		return disgord.PermissionBit(math.MaxUint64), nil
+	}
+	bit, err := BotClient.Guild(msg.GuildID).Member(msg.Author.ID).GetPermissions()
+	if err != nil {
+		return 0, err
+	}
+	return bit, nil
+}
+
+func hasPerm(bit disgord.PermissionBit, perm disgord.PermissionBit) bool {
+	// easily account for admin permissions
+	return bit.Contains(perm) || bit.Contains(disgord.PermissionAdministrator) || bit.Contains(disgord.PermissionAll)
+}
+
 // templates
 func msgerr(err error, msg *disgord.Message, s *disgord.Session) {
 	if err != nil {
-		if msg != nil {
-			msg.Reply(context.Background(), *s, err.Error())
-		}
+		msg.Reply(context.Background(), *s, "An error occured. Please report this as a bug.```prolog\n"+err.Error()+"```")
 		fmt.Printf("\033[31mError handling message\nAuthor: %s (%d)\nContent: \"%s\"\nError: ", msg.Author.Tag(), msg.Author.ID, msg.Content)
 		fmt.Println(err, "\033[0m")
 	} else {
@@ -173,6 +189,10 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 				Name:  "_ _\n@TRAS combinations",
 				Value: "Sends file with all possible combinations of the units you have selected and given.\n*Format: @TRAS combinations [words/characters] [items]*",
 			},
+			{
+				Name:  "_ _\n@TRAS ping",
+				Value: "Check if the bot is alive. Add 'info' or 'information' for latency data.",
+			},
 		},
 	}
 	eThird := &disgord.Embed{
@@ -259,6 +279,38 @@ func piResponse(msg *disgord.Message, s *disgord.Session) {
 	baseEmbedReply(msg, s, embed)
 }
 
+func pingResponse(info bool, msg *disgord.Message, s *disgord.Session, procTimeStart time.Time) {
+	if !info {
+		baseReply(msg, s, "Pong!")
+		return
+	}
+
+	hbTime, err := BotClient.AvgHeartbeatLatency()
+	if err != nil {
+		msgerr(err, msg, s)
+		return
+	}
+
+	procTime := time.Since(procTimeStart)
+
+	m, err := msg.Reply(context.Background(), *s, "Pong!") // end message
+	if err != nil {
+		msgerr(err, msg, s)
+		return
+	}
+
+	resp := "Pong!\n" + // build response
+		"`Average Heartbeat: " + hbTime.Truncate(time.Microsecond).String() + "`\n" +
+		"`Processing Time:   " + procTime.String() + " `\n" +
+		"`Response Latency:  " + m.Timestamp.Sub(msg.Timestamp.Time).String() + "`\n" +
+		"*Response Latency is response msg date - initial msg date*"
+
+	_, err = BotClient.Channel(msg.ChannelID).Message(m.ID).Update(&disgord.UpdateMessage{ // edit message
+		Content: &resp,
+	})
+	msgerr(err, msg, s)
+}
+
 // key value replace
 func emojifyResponse(text string, msg *disgord.Message, s *disgord.Session) {
 	respText := text
@@ -308,4 +360,36 @@ func boldResponse(text string, msg *disgord.Message, s *disgord.Session) {
 
 	//respond
 	baseReply(msg, s, respText)
+}
+
+// manipulation without database modification
+
+func setNickResponse(newNick string, msg *disgord.Message, s *disgord.Session) {
+	perms, err := getPerms(msg)
+	if err != nil {
+		msgerr(err, msg, s)
+		return
+	}
+
+	if !(hasPerm(perms, disgord.PermissionManageNicknames) || hasPerm(perms, disgord.PermissionManageMessages)) {
+		baseReply(msg, s, "You don't have permission \"Manage Nicknames\" or \"Manage Messages\". Sorry!")
+		return
+	}
+
+	if msg.GuildID == 0 {
+		baseReply(msg, s, "I can't change my nickname in DMs. Sorry!")
+		return
+	}
+
+	re := ""
+	if newNick == "{RESET}" {
+		newNick = ""
+		re = "re" // tell user the right thing
+	}
+	_, err = BotClient.Guild(msg.GuildID).SetCurrentUserNick(newNick)
+	if err != nil {
+		msgerr(err, msg, s)
+		return
+	}
+	baseReply(msg, s, "Nickname "+re+"set!")
 }

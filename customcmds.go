@@ -4,7 +4,7 @@ import (
 	"github.com/andersfylling/disgord"
 )
 
-// This file implements all the functions for handling custom commands
+// This file implements all the functions for handling server-specific custom commands
 
 func getGuildCustomCommandsFields(DID Division) ([]*disgord.EmbedField, error) {
 	cmds, err := getCustomCommands(DID)

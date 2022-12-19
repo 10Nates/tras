@@ -4,6 +4,8 @@ package main
 
 const BOT_VERSION = "3.0.0"
 
+const BOT_AUTHOR_ID = "186507006008360960"
+
 const BOT_ABOUT_INFO = `
 '''prolog
 Text Response Automation System

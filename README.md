@@ -132,12 +132,16 @@ __LIST OF COMMANDS__
 > 
 > Format: `@TRAS combinations [words/characters] [items]`
  
+### `@TRAS ping`
+> Check if the bot is alive. 
+> Add 'info' or 'information' for latency data.
+
 ### Default response
 > Responds "What's up?"
  
 ### Generated messages
-> Random generated messages that can be toggled to randomly to be said in response to messages. 
-> Random messages will not reply to commands.
+> Fully generated messages *(not an AI so they're completely nonsensical)* can be toggled as the fallback instead of the default response.
+> Feature was degraded from its former glory by changes to the Discord API.
 > Toggle random messages with `@TRAS speak randomspeak [on/off]`
 
 <br>

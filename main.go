@@ -12,8 +12,9 @@ import (
 	"github.com/andersfylling/disgord/std"
 )
 
-var BotID string
+var BotID string // loaded on init
 var BotPFP string
+var BotClient *disgord.Client
 
 func main() {
 	//load client
@@ -23,6 +24,8 @@ func main() {
 			disgord.IntentGuildMessageReactions | disgord.IntentDirectMessageReactions,
 	})
 	defer client.Gateway().StayConnectedUntilInterrupted()
+
+	BotClient = client
 
 	//startup message
 	client.Gateway().BotReady(func() {
@@ -49,13 +52,14 @@ func main() {
 
 	//on message with mention
 	client.Gateway().
-		WithMiddleware(content.NotByBot, content.ContainsBotMention, content.HasBotMentionPrefix). // filter
-		MessageCreate(func(s disgord.Session, evt *disgord.MessageCreate) {                        // on message
+		WithMiddleware(content.NotByBot, content.NotByWebhook, content.ContainsBotMention, content.HasBotMentionPrefix). // filter
+		MessageCreate(func(s disgord.Session, evt *disgord.MessageCreate) {                                              // on message
 			go parseCommand(evt.Message, &s)
 		})
 }
 
 func parseCommand(msg *disgord.Message, s *disgord.Session) {
+	procTimeStart := time.Now()
 	cstr := msg.Content
 	rsplitstr := regexp.MustCompile(`([^\\])( )`).ReplaceAllString(cstr, "$1\n")
 	carr := strings.Split(rsplitstr, "\n")
@@ -64,13 +68,13 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 	argsl := []string{}
 
 	for i := 0; i < len(carr); i++ {
-		if !strings.Contains(carr[i], BotID) {
+		if !strings.Contains(carr[i], BotID) { // ignore where bot is mentioned
 			args = append(args, carr[i])
 			argsl = append(argsl, strings.ToLower(carr[i]))
 		}
 	}
 
-	if len(args) < 1 {
+	if len(args) < 1 { // prevent error in switch case
 		args = append(args, "")
 		argsl = append(argsl, "")
 	}
@@ -153,13 +157,25 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 
 	case "set":
 		if len(argsl) > 1 && (argsl[1] == "nickname" || argsl[1] == "nick") {
-
+			text := strings.Join(args[2:], " ") // case sensitive
+			if len(argsl) > 2 {
+				setNickResponse(text, msg, s)
+			} else {
+				baseReply(msg, s, "What should by nickname be?")
+			}
 		} else {
 			defaultResponse(msg, s)
 		}
 	case "speak":
 
 	case "combinations":
+
+	case "ping":
+		if len(argsl) > 1 && (argsl[1] == "info" || argsl[1] == "information") {
+			pingResponse(true, msg, s, procTimeStart)
+		} else {
+			pingResponse(false, msg, s, procTimeStart)
+		}
 
 	default:
 		defaultResponse(msg, s)

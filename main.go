@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 
@@ -59,10 +58,12 @@ func main() {
 }
 
 func parseCommand(msg *disgord.Message, s *disgord.Session) {
-	procTimeStart := time.Now()
+	procTimeStart := time.Now() // timer for ping info
 	cstr := msg.Content
-	rsplitstr := regexp.MustCompile(`([^\\])( )`).ReplaceAllString(cstr, "$1\n")
-	carr := strings.Split(rsplitstr, "\n")
+	rsplitstr := argumentSplitRegex.ReplaceAllString(cstr, "$1\n") // separate arguments with "\\" and "\"
+	rfixspacestr := strings.ReplaceAll(rsplitstr, "\\ ", " ")      // fix "\ " to " " (this should only happen when that should happen)
+	rfixslashstr := strings.ReplaceAll(rfixspacestr, "\\\\", "\\") // fix "\\" to "\" (this is somewhat wonky behavior because "\" doesn't do
+	carr := strings.Split(rfixslashstr, "\n")                      // anything outside of the spaces so it can still work without disappearing but oh well)
 
 	args := []string{}
 	argsl := []string{}
@@ -136,7 +137,12 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 			baseReply(msg, s, "What needs bolding?")
 		}
 	case "replace":
-
+		if len(argsl) > 3 {
+			text := strings.Join(args[3:], " ") // case sensitive
+			replaceResponse(args[1], args[2], text, msg, s)
+		} else {
+			baseReply(msg, s, "Tell me the [what to replace], the [replacement], and then provide the [body of text].")
+		}
 	case "overcomplicate":
 
 	case "word":
@@ -176,7 +182,6 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 		} else {
 			pingResponse(false, msg, s, procTimeStart)
 		}
-
 	default:
 		defaultResponse(msg, s)
 	}

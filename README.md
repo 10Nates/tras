@@ -167,6 +167,8 @@ __GENERAL DETAILS__
 
 > Spaces can be included in individual arguments by using backspaces / Ex: `This\ is\ one\ argument, but\ this\ is\ the\ second`
 
+> Backspaces can still be used at the end of individual arguments / Ex: `This\ is\ one\ argument\\ but\ this\\\ is\ the\ second` 
+
 ----------------------------------
 
 <br>

@@ -23,7 +23,7 @@ func getDivision(msg *disgord.Message) Division {
 
 func getPerms(msg *disgord.Message) (disgord.PermissionBit, error) {
 	if msg.GuildID == 0 { // DMs
-		return disgord.PermissionBit(math.MaxUint64), nil
+		return disgord.PermissionBit(math.MaxUint64), nil // every permission feasible
 	}
 	bit, err := BotClient.Guild(msg.GuildID).Member(msg.Author.ID).GetPermissions()
 	if err != nil {
@@ -44,7 +44,7 @@ func msgerr(err error, msg *disgord.Message, s *disgord.Session) {
 		fmt.Printf("\033[31mError handling message\nAuthor: %s (%d)\nContent: \"%s\"\nError: ", msg.Author.Tag(), msg.Author.ID, msg.Content)
 		fmt.Println(err, "\033[0m")
 	} else {
-		fmt.Printf("Responded to \"%s\" from %d\n", msg.Content, msg.Author.ID)
+		fmt.Printf("Responded to \"%s\" from %d\n", msg.Content, msg.Author.ID) // logging
 	}
 }
 
@@ -73,12 +73,25 @@ func baseEmbedReply(msg *disgord.Message, s *disgord.Session, embed *disgord.Emb
 }
 
 func baseEmbedDMReply(msg *disgord.Message, s *disgord.Session, embed *disgord.Embed, errorMessage string) {
-	_, _, err := msg.Author.SendMsg(context.Background(), *s, &disgord.Message{
+	_, _, err := msg.Author.SendMsg(context.Background(), *s, &disgord.Message{ // DM feature
 		Embeds: []*disgord.Embed{embed},
 	})
-	if err != nil && errorMessage != "" {
-		baseReply(msg, s, errorMessage)
+	if err != nil && errorMessage != "" { // typical error is user having DMs disabled
+		baseReply(msg, s, errorMessage) // this covers network errors because it also handles errors
 	}
+}
+
+func baseTextFileReply(msg *disgord.Message, s *disgord.Session, content string, fileName string, fileContents string) {
+	_, err := msg.Reply(context.Background(), *s, disgord.CreateMessage{
+		Content: content,
+		Files: []disgord.CreateMessageFile{
+			{
+				FileName: fileName,
+				Reader:   strings.NewReader(fileContents),
+			},
+		},
+	})
+	msgerr(err, msg, s)
 }
 
 // handlers
@@ -311,7 +324,7 @@ func pingResponse(info bool, msg *disgord.Message, s *disgord.Session, procTimeS
 	msgerr(err, msg, s)
 }
 
-// key value replace
+// simple replace
 func emojifyResponse(text string, msg *disgord.Message, s *disgord.Session) {
 	respText := text
 	for k, v := range emojifyReplacements { // replace key with value
@@ -360,6 +373,24 @@ func boldResponse(text string, msg *disgord.Message, s *disgord.Session) {
 
 	//respond
 	baseReply(msg, s, respText)
+}
+
+// complex replace
+func replaceResponse(item string, replacement string, text string, msg *disgord.Message, s *disgord.Session) {
+	respText := strings.ReplaceAll(text, item, replacement) // straight in, no need for filtering unless I'm mistaken
+	if len(respText) > 2000 {                               // discord character limit
+		baseTextFileReply(msg, s, "Your request didn't fit in a message, so I made it a file.", "replacement.txt", respText)
+	} else {
+		baseReply(msg, s, respText)
+	}
+}
+
+func jumbleResponse(msg *disgord.Message, s *disgord.Session) {
+
+}
+
+func overcompResponse(msg *disgord.Message, s *disgord.Session) {
+
 }
 
 // manipulation without database modification

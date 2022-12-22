@@ -1,10 +1,14 @@
 package main
 
+import "regexp"
+
 // put all the stuff that should remain in memory in one place
 
 const BOT_VERSION = "3.0.0"
 
 const BOT_AUTHOR_ID = "186507006008360960"
+
+var argumentSplitRegex = regexp.MustCompile(`([^\\](\\\\)*)( )`)
 
 const BOT_ABOUT_INFO = `
 '''prolog

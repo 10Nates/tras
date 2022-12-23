@@ -165,9 +165,9 @@ __GENERAL DETAILS__
 
 > Ranking levels are base 2 logirithms of your progress.
 
-> Spaces can be included in individual arguments by using backspaces / Ex: `This\ is\ one\ argument, but\ this\ is\ the\ second`
+> Spaces can be included in individual arguments by using escapes / Ex: `This\ is\ one\ argument, but\ this\ is\ the\ second`
 
-> Backspaces can still be used at the end of individual arguments / Ex: `This\ is\ one\ argument\\ but\ this\\\ is\ the\ second` 
+> Escaped slashes can still be used at the end of individual arguments / Ex: `This\ is\ one\ argument\\ but\ this\\\ is\ the\ second` 
 
 ----------------------------------
 

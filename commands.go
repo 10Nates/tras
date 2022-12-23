@@ -14,6 +14,7 @@ import (
 // This file implements all the functions that directly reply to the commands
 
 // helpers
+
 func getDivision(msg *disgord.Message) Division {
 	if msg.GuildID != 0 {
 		return Division("G-" + msg.GuildID.HexString())
@@ -38,6 +39,7 @@ func hasPerm(bit disgord.PermissionBit, perm disgord.PermissionBit) bool {
 }
 
 // templates
+
 func msgerr(err error, msg *disgord.Message, s *disgord.Session) {
 	if err != nil {
 		msg.Reply(context.Background(), *s, "An error occured. Please report this as a bug.```prolog\n"+err.Error()+"```")
@@ -94,11 +96,12 @@ func baseTextFileReply(msg *disgord.Message, s *disgord.Session, content string,
 	msgerr(err, msg, s)
 }
 
-// handlers
+// -- handlers --
 
 // simple response
+
 func defaultResponse(msg *disgord.Message, s *disgord.Session) {
-	baseReply(msg, s, "What's up?")
+	baseReply(msg, s, defaultResponses[rand.Intn(len(defaultResponses))])
 }
 
 func helpResponse(msg *disgord.Message, s *disgord.Session) {
@@ -245,7 +248,7 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 	}
 
 	// Has to be several messages due to embed size limitations
-	baseReply(msg, s, HELP_COMMAND_RESPONSES[rand.Intn(len(HELP_COMMAND_RESPONSES))]) // random help command response
+	baseReply(msg, s, helpCommandResponses[rand.Intn(len(helpCommandResponses))]) // random help command response
 	baseEmbedDMReply(msg, s, eFirst, "Your DMs are not open! Feel free to check out the commmands on https://tras.almostd.one.")
 	baseEmbedDMReply(msg, s, eSecond, "")
 	baseEmbedDMReply(msg, s, eThird, "")
@@ -325,6 +328,7 @@ func pingResponse(info bool, msg *disgord.Message, s *disgord.Session, procTimeS
 }
 
 // simple replace
+
 func emojifyResponse(text string, msg *disgord.Message, s *disgord.Session) {
 	respText := text
 	for k, v := range emojifyReplacements { // replace key with value
@@ -376,6 +380,7 @@ func boldResponse(text string, msg *disgord.Message, s *disgord.Session) {
 }
 
 // complex replace
+
 func replaceResponse(item string, replacement string, text string, msg *disgord.Message, s *disgord.Session) {
 	respText := strings.ReplaceAll(text, item, replacement) // straight in, no need for filtering unless I'm mistaken
 	if len(respText) > 2000 {                               // discord character limit
@@ -385,15 +390,50 @@ func replaceResponse(item string, replacement string, text string, msg *disgord.
 	}
 }
 
-func jumbleResponse(msg *disgord.Message, s *disgord.Session) {
+func jumbleResponse(args []string, msg *disgord.Message, s *disgord.Session) {
+	// This requires some level of explanation for what it's supposed to do. It's supposed
+	// to sort of break down the grammar while maintaining the meaning. Basically it shifts
+	// words around slightly but not significantly in a large body. Given enough passes
+	// through entropy would take over though. This only does one pass.
+
+	mangle := args
+	base := strings.Join(args, " ")
+	mod := strings.Join(args, " ")
+	r := rand.New(rand.NewSource(time.Now().UnixNano())) // this doesn't need to be cryptographically secure
+
+	// ensure it does something
+	for mod == base && len(mangle) != 1 { // while loop
+		for i := 0; i < len(mangle); i++ {
+			if r.Intn(2) == 1 { // 50% chance
+
+				if !(i < len(mangle)-1) {
+					continue // prevent overflow
+				}
+
+				//swaps 0 with 1
+				b := mangle[i+1]
+				mangle[i+1] = mangle[i]
+				mangle[i] = b
+			} else if i > 0 { // prevent underflow
+
+				//swaps 0 with -1
+				b := mangle[i-1]
+				mangle[i-1] = mangle[i]
+				mangle[i] = b
+			}
+		}
+		mod = strings.Join(mangle, " ")
+	}
+	// finished jumbling
+
+	baseReply(msg, s, mod)
+}
+
+func overcompResponse(text string, msg *disgord.Message, s *disgord.Session) {
 
 }
 
-func overcompResponse(msg *disgord.Message, s *disgord.Session) {
-
-}
-
-// manipulation without database modification
+// settings
 
 func setNickResponse(newNick string, msg *disgord.Message, s *disgord.Session) {
 	perms, err := getPerms(msg)
@@ -424,3 +464,5 @@ func setNickResponse(newNick string, msg *disgord.Message, s *disgord.Session) {
 	}
 	baseReply(msg, s, "Nickname "+re+"set!")
 }
+
+// bigtype

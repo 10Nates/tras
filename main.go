@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -14,8 +15,19 @@ import (
 var BotID string // loaded on init
 var BotPFP string
 var BotClient *disgord.Client
+var BigTypeLetters map[string]map[string]string // this is way easier than the alternative
 
 func main() {
+	// load bigtype letters
+	bigtypejson, err := os.ReadFile("bigtype.json")
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(bigtypejson, &BigTypeLetters)
+	if err != nil {
+		panic(err)
+	}
+
 	//load client
 	client := disgord.New(disgord.Config{
 		BotToken: os.Getenv("Token"),
@@ -100,7 +112,11 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 	case "big":
 
 	case "jumble":
-
+		if len(argsl) > 1 {
+			jumbleResponse(args[1:], msg, s) // case sensitive, presplit
+		} else {
+			baseReply(msg, s, "What should I jumble?")
+		}
 	case "emojify":
 		if len(argsl) > 1 {
 			text := strings.Join(argsl[1:], " ") // case insensitive

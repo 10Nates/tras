@@ -33,6 +33,31 @@ Text Response Automation System
 '''](https://github.com/10Nates/tras/LICENSE)
 `
 
+// various quips to make it friendlier
+var helpCommandResponses = []string{
+	"Here's your help hotline, hot and ready!",
+	"Looking for lessons? You're in luck, here's a list!",
+	"Confused and unsure? These commands will be your cure!",
+	"Introducing this informative index!",
+	"This list will lend a hand, just take a look and understand!",
+	"Need some guidance? This directory's the key!",
+	"This register has the answer, just take a look and you'll be a master!",
+	"Looking for conclusions? This catalog has them all!",
+	"Lost in a fog? These functions will clear the smog!",
+}
+
+var defaultResponses = []string{
+	"What's up?",
+	"How's it hanging?",
+	"What do you need?",
+	"You called?",
+	"What's new?",
+	"What's on your mind?",
+	"What's going on?",
+	"Do you need something?",
+}
+
+// key value replacement maps
 var superScriptReplacements = map[string]string{
 	"0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", // math
 	"8": "⁸", "9": "⁹", "+": "⁺", "-": "⁻", "=": "⁼", "(": "⁽", ")": "⁾",
@@ -45,18 +70,6 @@ var superScriptReplacements = map[string]string{
 	"Q": "ᵠ", "R": "ᴿ", "S": "ˢ", "T": "ᵀ", "U": "ᵁ", "V": "ⱽ", "W": "ᵂ", "X": "ˣ",
 	"Y": "ˠ", "Z": "ᶻ",
 	"!": "ꜝ", ".": "ᐧ", "/": "ᐟ", "\\": "ᐠ", // extra characters
-}
-
-var HELP_COMMAND_RESPONSES = []string{ // various quips to make it friendlier
-	"Here's your help hotline, hot and ready!",
-	"Looking for lessons? You're in luck, here's a list!",
-	"Confused and unsure? These commands will be your cure!",
-	"Introducing this informative index!",
-	"This list will lend a hand, just take a look and understand!",
-	"Need some guidance? This directory's the key!",
-	"This register has the answer, just take a look and you'll be a master!",
-	"Looking for conclusions? This catalog has them all!",
-	"Lost in a fog? These functions will clear the smog!",
 }
 
 var flagifyReplacements = map[string]string{

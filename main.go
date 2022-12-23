@@ -110,7 +110,25 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 	case "pi":
 		piResponse(msg, s)
 	case "big":
-
+		if len(argsl) > 1 && (argsl[1] == "-t" || argsl[1] == "--thin") {
+			if len(argsl) > 3 {
+				text := strings.Join(argsl[3:], " ") // case insensitive
+				bigTypeRespones(args[2], text, true, msg, s)
+			} else if len(argsl) == 3 {
+				bigTypeRespones(args[2], argsl[2], true, msg, s) // word is case sensitive but text is not
+			} else {
+				baseReply(msg, s, "I need to know the [word] to enlarge, OR the [word] and [text] to enlarge with it.")
+			}
+		} else {
+			if len(argsl) > 2 {
+				text := strings.Join(argsl[2:], " ") // case insensitive
+				bigTypeRespones(args[1], text, false, msg, s)
+			} else if len(argsl) == 2 {
+				bigTypeRespones(args[1], argsl[1], false, msg, s) // word is case sensitive but text is not
+			} else {
+				baseReply(msg, s, "I need to know the [word] to enlarge, OR the [word] and [text] to enlarge with it.")
+			}
+		}
 	case "jumble":
 		if len(argsl) > 1 {
 			jumbleResponse(args[1:], msg, s) // case sensitive, presplit

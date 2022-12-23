@@ -465,4 +465,65 @@ func setNickResponse(newNick string, msg *disgord.Message, s *disgord.Session) {
 	baseReply(msg, s, "Nickname "+re+"set!")
 }
 
-// bigtype
+// generators
+
+func bigTypeRespones(word string, text string, thin bool, msg *disgord.Message, s *disgord.Session) {
+	textletters := strings.Split(text, "")
+	for i := 0; i < len(textletters); i++ {
+		_, exists := BigTypeLetters[textletters[i]]
+		if !exists && textletters[i] != " " {
+			textletters[i] = "⛝"
+		}
+	}
+
+	wordLength := len(strings.Split(word, "")) // fixes unicode characters (kind of, they still aren't always monospace)
+
+	inchar := strings.Repeat(" ", wordLength) // spacing within character
+	space := strings.Repeat(" ", wordLength*2)
+	midchar := "" // in between characters, gets added on 2nd char
+	res := [5]string{}
+
+	// construct 5 layers
+	for i := 0; i < len(textletters); i++ {
+		if i == 1 {
+			if !thin {
+				midchar = strings.Repeat(" ", wordLength+1)
+			} else {
+				midchar = strings.Repeat(" ", wordLength) // reduces readibility
+			}
+		}
+		if textletters[i] != " " {
+			if !thin {
+				res[0] += midchar + BigTypeLetters[textletters[i]]["1"]
+				res[1] += midchar + BigTypeLetters[textletters[i]]["2"]
+				res[2] += midchar + BigTypeLetters[textletters[i]]["3"]
+				res[3] += midchar + BigTypeLetters[textletters[i]]["4"]
+				res[4] += midchar + BigTypeLetters[textletters[i]]["5"]
+			} else {
+				// this has to be done at this step since it shouldn't remove spaces between letters
+				res[0] += midchar + strings.ReplaceAll(BigTypeLetters[textletters[i]]["1"], " ", "")
+				res[1] += midchar + strings.ReplaceAll(BigTypeLetters[textletters[i]]["2"], " ", "")
+				res[2] += midchar + strings.ReplaceAll(BigTypeLetters[textletters[i]]["3"], " ", "")
+				res[3] += midchar + strings.ReplaceAll(BigTypeLetters[textletters[i]]["4"], " ", "")
+				res[4] += midchar + strings.ReplaceAll(BigTypeLetters[textletters[i]]["5"], " ", "")
+			}
+		} else {
+			res[0] += space
+			res[1] += space
+			res[2] += space
+			res[3] += space
+			res[4] += space
+		}
+	}
+	bigString := res[0] + "\n" + res[1] + "\n" + res[2] + "\n" + res[3] + "\n" + res[4]
+	// at this point, it's still all placeholder items. It still has to be replaced with the word and correct spacing
+
+	bigString = strings.ReplaceAll(bigString, "_", inchar)
+	bigString = strings.ReplaceAll(bigString, "c", word)
+
+	if len(bigString) > 400 {
+		baseTextFileReply(msg, s, "The result is over 400 characters, so I made it a file.", "big.txt", bigString)
+	} else {
+		baseReply(msg, s, "```\n"+bigString+"\n```")
+	}
+}

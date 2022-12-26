@@ -436,7 +436,26 @@ func overcompResponse(words []string, msg *disgord.Message, s *disgord.Session) 
 		val, exists := ThesaurusLookup[strings.ToLower(cleaned[2])] // must be lowercase for lookup
 		if exists {
 			// replace with synonyms
-			words[i] = cleaned[1] + val[GRand.Intn(len(val))] + cleaned[3]
+			newval := val[GRand.Intn(len(val))]
+			newvalarr := strings.Split(newval, "")
+
+			// Find where capitals were
+			capsLocations := capsRegex.FindAllStringIndex(cleaned[2], -1)
+			if capsLocations != nil {
+				locsA := map[int]bool{} // map to prevent index range issues
+				for i := 0; i < len(capsLocations); i++ {
+					locsA[capsLocations[i][0]] = true // list of where capitals are
+				}
+
+				for i := 0; i < len(newvalarr); i++ {
+					val, exists := locsA[i]
+					if exists && val {
+						newvalarr[i] = strings.ToUpper(newvalarr[i]) // reapply capitals to new string
+					}
+				}
+			}
+
+			words[i] = cleaned[1] + strings.Join(newvalarr, "") + cleaned[3]
 		}
 	}
 

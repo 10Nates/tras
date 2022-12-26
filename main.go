@@ -192,7 +192,7 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 		}
 	case "overcomplicate":
 		if len(argsl) > 1 {
-			overcompResponse(args[1:], msg, s) // Doesn't retain case but that doesn't happen here
+			overcompResponse(args[1:], msg, s)
 		} else {
 			baseReply(msg, s, "Whichever lexical constructions shall I reform?")
 		}

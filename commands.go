@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"math/rand"
 	"strings"
 	"time"
 
@@ -101,7 +100,7 @@ func baseTextFileReply(msg *disgord.Message, s *disgord.Session, content string,
 // simple response
 
 func defaultResponse(msg *disgord.Message, s *disgord.Session) {
-	baseReply(msg, s, defaultResponses[rand.Intn(len(defaultResponses))])
+	baseReply(msg, s, defaultResponses[GRand.Intn(len(defaultResponses))])
 }
 
 func helpResponse(msg *disgord.Message, s *disgord.Session) {
@@ -248,7 +247,7 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 	}
 
 	// Has to be several messages due to embed size limitations
-	baseReply(msg, s, helpCommandResponses[rand.Intn(len(helpCommandResponses))]) // random help command response
+	baseReply(msg, s, helpCommandResponses[GRand.Intn(len(helpCommandResponses))]) // random help command response
 	baseEmbedDMReply(msg, s, eFirst, "Your DMs are not open! Feel free to check out the commmands on https://tras.almostd.one.")
 	baseEmbedDMReply(msg, s, eSecond, "")
 	baseEmbedDMReply(msg, s, eThird, "")
@@ -399,7 +398,7 @@ func jumbleResponse(args []string, msg *disgord.Message, s *disgord.Session) {
 	mangle := args
 	base := strings.Join(args, " ")
 	mod := strings.Join(args, " ")
-	r := rand.New(rand.NewSource(time.Now().UnixNano())) // this doesn't need to be cryptographically secure
+	r := GRand
 
 	// ensure it does something
 	for mod == base && len(mangle) != 1 { // while loop
@@ -429,7 +428,24 @@ func jumbleResponse(args []string, msg *disgord.Message, s *disgord.Session) {
 	baseReply(msg, s, mod)
 }
 
-func overcompResponse(text string, msg *disgord.Message, s *disgord.Session) {
+func overcompResponse(words []string, msg *disgord.Message, s *disgord.Session) {
+	// for every word
+	for i := 0; i < len(words); i++ {
+		cleaned := punctuationSplitRegex.FindStringSubmatch(words[i]) // 0 is the whole match, so $1 = cleaned[1]
+		// check if exists & get array of synonyms
+		val, exists := ThesaurusLookup[strings.ToLower(cleaned[2])] // must be lowercase for lookup
+		if exists {
+			// replace with synonyms
+			words[i] = cleaned[1] + val[GRand.Intn(len(val))] + cleaned[3]
+		}
+	}
+
+	resp := strings.Join(words, " ")
+	if len(resp) > 2000 {
+		baseTextFileReply(msg, s, "My literacy was too extravagant, so I made it a file.", "overcomplicate.txt", resp)
+	} else {
+		baseReply(msg, s, resp)
+	}
 
 }
 

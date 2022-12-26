@@ -10,6 +10,8 @@ const BOT_AUTHOR_ID = "186507006008360960"
 
 var argumentSplitRegex = regexp.MustCompile(`([^\\](\\\\)*)( )`)
 
+var punctuationSplitRegex = regexp.MustCompile(`^([^a-zA-Z0-9]*)(.+?)([^a-zA-Z0-9]*)$`)
+
 const BOT_ABOUT_INFO = `
 '''prolog
 Text Response Automation System

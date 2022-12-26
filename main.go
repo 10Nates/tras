@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -16,14 +17,26 @@ var BotID string // loaded on init
 var BotPFP string
 var BotClient *disgord.Client
 var BigTypeLetters map[string]map[string]string // this is way easier than the alternative
+var ThesaurusLookup map[string][]string
+var GRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func main() {
 	// load bigtype letters
-	bigtypejson, err := os.ReadFile("bigtype.json")
+	bigtypejson, err := os.ReadFile("src/bigtype.json")
 	if err != nil {
 		panic(err)
 	}
 	err = json.Unmarshal(bigtypejson, &BigTypeLetters)
+	if err != nil {
+		panic(err)
+	}
+
+	// load thesaurus
+	thesarusjson, err := os.ReadFile("src/thesaurus.json")
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(thesarusjson, &ThesaurusLookup)
 	if err != nil {
 		panic(err)
 	}
@@ -178,7 +191,11 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 			baseReply(msg, s, "Tell me the [what to replace], the [replacement], and then provide the [body of text].")
 		}
 	case "overcomplicate":
-
+		if len(argsl) > 1 {
+			overcompResponse(args[1:], msg, s) // Doesn't retain case but that doesn't happen here
+		} else {
+			baseReply(msg, s, "Whichever lexical constructions shall I reform?")
+		}
 	case "word":
 		if len(argsl) > 1 && argsl[1] == "info" {
 

@@ -120,6 +120,7 @@ __LIST OF COMMANDS__
 > Requires "Manage Messages" or "Change Nicknames".
 > 
 > Format: `@TRAS set nickname [nickname/{RESET}]`
+> Reset alternative: `@TRAS reset nickname`
  
 ### `@TRAS speak`
 > Generate a sentence, plus toggle and get the status of random generated messages. 

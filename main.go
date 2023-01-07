@@ -183,22 +183,42 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 		} else {
 			baseReply(msg, s, "What needs bolding?")
 		}
-	case "replace":
+	case "replace", "rep":
 		if len(argsl) > 3 {
 			text := strings.Join(args[3:], " ") // case sensitive
 			replaceResponse(args[1], args[2], text, msg, s)
 		} else {
 			baseReply(msg, s, "Tell me the [what to replace], the [replacement], and then provide the [body of text].")
 		}
-	case "overcomplicate":
+	case "overcomplicate", "overcomp":
 		if len(argsl) > 1 {
-			overcompResponse(args[1:], msg, s)
+			overcompResponse(args[1:], msg, s) // case sensitive
 		} else {
 			baseReply(msg, s, "Whichever lexical constructions shall I reform?")
 		}
 	case "word":
 		if len(argsl) > 1 && argsl[1] == "info" {
+			if len(argsl) > 2 { // type
+				if len(argsl) > 3 { // word
+					word := strings.Join(args[3:], " ")
 
+					switch argsl[2] {
+					case "definition", "definitions", "define", "def", "defs":
+						wordInfoReply("def", word, msg, s)
+
+					case "categories", "category", "cat", "cats", "partofspeech", "pos":
+						wordInfoReply("cat", word, msg, s)
+
+					default:
+						baseReply(msg, s, "That's not an info type I can provide.")
+					}
+
+				} else {
+					baseReply(msg, s, "What word do you want info on?")
+				}
+			} else {
+				baseReply(msg, s, "What type of info do you want? Defintion, or categories?")
+			}
 		} else {
 			defaultResponse(msg, s)
 		}
@@ -208,10 +228,10 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 		} else {
 			defaultResponse(msg, s)
 		}
-	case "commands":
-
+	case "commands", "cmds":
+		defaultTODOResponse(msg, s) // TODO: commands
 	case "rank":
-
+		defaultTODOResponse(msg, s) // TODO: ranks
 	case "set":
 		if len(argsl) > 1 && (argsl[1] == "nickname" || argsl[1] == "nick") {
 			text := strings.Join(args[2:], " ") // case sensitive
@@ -223,10 +243,18 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 		} else {
 			defaultResponse(msg, s)
 		}
+	case "reset":
+		if len(argsl) > 1 && (argsl[1] == "nickname" || argsl[1] == "nick") {
+			// A more natural way of resetting nickname
+			text := "{RESET}" // case sensitive
+			setNickResponse(text, msg, s)
+		} else {
+			defaultResponse(msg, s)
+		}
 	case "speak":
-
-	case "combinations":
-
+		defaultTODOResponse(msg, s) // TODO: speak
+	case "combinations", "combos":
+		defaultTODOResponse(msg, s) // TODO: combinations
 	case "ping":
 		if len(argsl) > 1 && (argsl[1] == "info" || argsl[1] == "information") {
 			pingResponse(true, msg, s, procTimeStart)

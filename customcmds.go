@@ -38,12 +38,12 @@ func getGuildCustomCommandsFields(DID Division) ([]*disgord.EmbedField, error) {
 	return newEmbedFields, nil
 }
 
-func getCustomCommands(guildID Division) ([]*customCommand, error) {
-	return []*customCommand{}, nil // TODO: implement custom commands
+func getCustomCommands(guildID Division) ([]*CustomCommand, error) {
+	return []*CustomCommand{}, nil // TODO: implement custom commands
 }
 
-func newCustomCommand(key string, val string, div Division) *customCommand {
-	return &customCommand{
+func newCustomCommand(key string, val string, div Division) *CustomCommand {
+	return &CustomCommand{
 		key:     key,
 		val:     val,
 		divType: div.Type(), // U for user, G for guild

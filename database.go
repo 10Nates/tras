@@ -1,8 +1,6 @@
 package main
 
 import (
-	"strings"
-
 	"github.com/andersfylling/snowflake/v5"
 )
 
@@ -14,15 +12,19 @@ import (
 type Division string
 
 func (d *Division) Snowflake() snowflake.Snowflake {
-	return snowflake.ParseSnowflakeString(strings.Split(string(*d), "-")[1])
+	return snowflake.ParseSnowflakeString(string(*d)[1:]) //faster than strings split + allows removal of weird - in between
 }
 
 func (d *Division) Type() byte {
-	return strings.Split(string(*d), "-")[0][0]
+	return string(*d)[0] // first byte of string is div type
+}
+
+func NewDivision(divType byte, divID snowflake.Snowflake) Division {
+	return Division(string(divType) + divID.HexString())
 }
 
 // custom commands, also used in custom.go
-type customCommand struct {
+type CustomCommand struct {
 	key     string
 	val     string
 	divType byte

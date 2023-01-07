@@ -2,8 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"math"
+	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -16,9 +21,13 @@ import (
 
 func getDivision(msg *disgord.Message) Division {
 	if msg.GuildID != 0 {
-		return Division("G-" + msg.GuildID.HexString())
+		return NewDivision('G', msg.GuildID)
 	}
-	return Division("U-" + msg.Author.ID.HexString()) // if it is not a guild, use the author's ID as the ID
+	// if it is not a guild, use the author's ID as the ID
+	if msg.Author.ID != 0 {
+		return NewDivision('U', msg.Author.ID)
+	}
+	return NewDivision('T', 0) // test/temporary, discard
 }
 
 func getPerms(msg *disgord.Message) (disgord.PermissionBit, error) {
@@ -35,6 +44,54 @@ func getPerms(msg *disgord.Message) (disgord.PermissionBit, error) {
 func hasPerm(bit disgord.PermissionBit, perm disgord.PermissionBit) bool {
 	// easily account for admin permissions
 	return bit.Contains(perm) || bit.Contains(disgord.PermissionAdministrator) || bit.Contains(disgord.PermissionAll)
+}
+
+type WikiRes struct {
+	BatchComplete bool `json:"batchcomplete"`
+	Query         struct {
+		Pages []struct {
+			PageID     int    `json:"pageid"`
+			Ns         int    `json:"ns"`
+			Title      string `json:"title"`
+			Missing    bool   `json:"missing"`
+			Categories []struct {
+				Ns    int    `json:"ns"`
+				Title string `json:"title"`
+			} `json:"categories"`
+			Extract string `json:"extract"`
+		} `json:"pages"`
+	} `json:"query"`
+}
+
+func queryWiktionary(word string) (*WikiRes, error) {
+	// query
+	fmted := strings.ReplaceAll(word, " ", "_")
+	fmted = url.QueryEscape(fmted)
+	url := "https://simple.wiktionary.org/w/api.php?action=query&format=json&prop=categories%7Cextracts&titles=" + fmted + "&formatversion=2&explaintext=1"
+	res, err := http.Get(url)
+
+	// handle
+	if err != nil {
+		return nil, err
+	}
+	if res.StatusCode != 200 {
+		return nil, errors.New(res.Status)
+	}
+
+	// read
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// format
+	var resp WikiRes
+	err = json.Unmarshal(body, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resp, nil
 }
 
 // templates
@@ -98,6 +155,10 @@ func baseTextFileReply(msg *disgord.Message, s *disgord.Session, content string,
 // -- handlers --
 
 // simple response
+
+func defaultTODOResponse(msg *disgord.Message, s *disgord.Session) {
+	baseReply(msg, s, "This feature is incomplete. Don't worry, it's coming!")
+}
 
 func defaultResponse(msg *disgord.Message, s *disgord.Session) {
 	baseReply(msg, s, defaultResponses[GRand.Intn(len(defaultResponses))])
@@ -465,7 +526,6 @@ func overcompResponse(words []string, msg *disgord.Message, s *disgord.Session) 
 	} else {
 		baseReply(msg, s, resp)
 	}
-
 }
 
 // settings
@@ -560,5 +620,59 @@ func bigTypeRespones(word string, text string, thin bool, msg *disgord.Message, 
 		baseTextFileReply(msg, s, "The result is over 400 characters, so I made it a file.", "big.txt", bigString)
 	} else {
 		baseReply(msg, s, "```\n"+bigString+"\n```")
+	}
+}
+
+func wordInfoReply(info string, word string, msg *disgord.Message, s *disgord.Session) {
+	res, err := queryWiktionary(word)
+	if err != nil {
+		msgerr(err, msg, s)
+		return
+	}
+	q := res.Query.Pages[0]
+
+	if q.Missing {
+		baseReply(msg, s, "This word is not available on Wiktionary. Are you sure this is a real English word?\n\n*Note: This is case sensitive**")
+		return
+	}
+
+	if info == "def" {
+		// format
+		extract := q.Extract
+		extract = strings.ReplaceAll(extract, "\\n", "\n")
+		extract = strings.ReplaceAll(extract, "== ", "**__")
+		extract = strings.ReplaceAll(extract, " ==", "__**")
+		sections := strings.Split(extract, "\n\n")
+
+		// hyphens for subsections
+		for i, v := range sections {
+			section := strings.Split(v, "\n")
+			if len(section) > 2 {
+				for i2, v2 := range section[3:] {
+					section[i2+3] = "- " + v2
+				}
+			}
+			sections[i] = strings.Join(section, "\n")
+		}
+
+		// reply
+		extfmted := strings.Join(sections[1:], "\n")
+		baseReply(msg, s, extfmted)
+
+	} else if info == "cat" {
+		// format
+		var categories []string
+		for _, v := range q.Categories {
+			categories = append(categories, strings.Replace(v.Title, "Category:", "", 1))
+		}
+
+		// reply
+		catfmtd := "\n**__Categories__**\n- " + strings.Join(categories, "\n- ")
+		catfmtd += "\n\n*Note: all Wiktionary categories, not just parts of speech*"
+
+		baseReply(msg, s, catfmtd)
+
+	} else {
+		panic("Internal command incorrectly used")
 	}
 }

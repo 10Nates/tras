@@ -152,7 +152,7 @@ __LIST OF COMMANDS__
 
 __GENERAL DETAILS__
 ---
-> All data is stored in MongoDB.
+> All data is stored in Postgres.
 
 > Large items are stored in files.
 

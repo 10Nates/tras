@@ -157,7 +157,8 @@ func baseTextFileReply(msg *disgord.Message, s *disgord.Session, content string,
 // simple response
 
 func defaultTODOResponse(msg *disgord.Message, s *disgord.Session) {
-	baseReply(msg, s, "This feature is incomplete. Don't worry, it's coming!")
+	msgerr(errors.New("TODO"), msg, s)
+	// baseReply(msg, s, "This feature is incomplete. Don't worry, it's coming!")
 }
 
 func defaultResponse(msg *disgord.Message, s *disgord.Session) {
@@ -309,7 +310,7 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 
 	// Has to be several messages due to embed size limitations
 	baseReply(msg, s, helpCommandResponses[GRand.Intn(len(helpCommandResponses))]) // random help command response
-	baseEmbedDMReply(msg, s, eFirst, "Your DMs are not open! Feel free to check out the commmands on https://github.com/10Nates/tras.")
+	baseEmbedDMReply(msg, s, eFirst, "Your DMs are not open! Feel free to check out the commmands on https://tras.almostd.one.")
 	baseEmbedDMReply(msg, s, eSecond, "")
 	baseEmbedDMReply(msg, s, eThird, "")
 	baseEmbedDMReply(msg, s, eFourth, "")
@@ -339,7 +340,7 @@ func aboutResponse(msg *disgord.Message, s *disgord.Session, nocb bool) {
 	if err != nil {
 		println(err.Error())
 	}
-	baseEmbedDMReply(msg, s, embed, "Your DMs are not open! Feel free to find the information on https://github.com/10Nates/tras.")
+	baseEmbedDMReply(msg, s, embed, "Your DMs are not open! Feel free to find the information on https://tras.almostd.one.")
 }
 
 func piResponse(msg *disgord.Message, s *disgord.Session) {

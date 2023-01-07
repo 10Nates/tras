@@ -175,4 +175,4 @@ __GENERAL DETAILS__
 <br>
 <br>
 
-## Copyright (c) 2022 Nathan B. (10Nates)
+## Copyright (c) 2023 Nathan B. (10Nates)

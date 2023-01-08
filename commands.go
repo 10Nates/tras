@@ -93,7 +93,9 @@ func queryWiktionary(word string) (*WikiRes, error) {
 
 func msgerr(err error, msg *disgord.Message, s *disgord.Session) {
 	if err != nil {
-		msg.Reply(context.Background(), *s, "An error occured. Please report this as a bug.```prolog\n"+err.Error()+"```")
+		if s != nil { // in case of headless message
+			msg.Reply(context.Background(), *s, "An error occured. Please report this as a bug.```prolog\n"+err.Error()+"```")
+		}
 		fmt.Printf("\033[31mError handling message\nAuthor: %s (%d)\nContent: \"%s\"\nError: ", msg.Author.Tag(), msg.Author.ID, msg.Content)
 		fmt.Println(err, "\033[0m")
 	} else {
@@ -102,6 +104,11 @@ func msgerr(err error, msg *disgord.Message, s *disgord.Session) {
 }
 
 func baseReply(msg *disgord.Message, s *disgord.Session, reply string) {
+	if s == nil { // for testing, will never happen in the wild
+		fmt.Println(reply)
+		return
+	}
+
 	_, err := msg.Reply(context.Background(), *s, disgord.Message{
 		Content: reply,
 		MessageReference: &disgord.MessageReference{ // "reply" client feature
@@ -114,6 +121,15 @@ func baseReply(msg *disgord.Message, s *disgord.Session, reply string) {
 }
 
 func baseEmbedReply(msg *disgord.Message, s *disgord.Session, embed *disgord.Embed) {
+	if s == nil { // for testing, will never happen in the wild
+		resp, err := json.MarshalIndent(embed, "", "  ")
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(string(resp))
+		return
+	}
+
 	_, err := msg.Reply(context.Background(), *s, disgord.Message{
 		Embeds: []*disgord.Embed{embed},
 		MessageReference: &disgord.MessageReference{ // "reply" client feature
@@ -126,15 +142,30 @@ func baseEmbedReply(msg *disgord.Message, s *disgord.Session, embed *disgord.Emb
 }
 
 func baseEmbedDMReply(msg *disgord.Message, s *disgord.Session, embed *disgord.Embed, errorMessage string) {
+	if s == nil { // for testing, will never happen in the wild
+		resp, err := json.MarshalIndent(embed, "", "  ")
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(string(resp))
+		return
+	}
+
 	_, _, err := msg.Author.SendMsg(context.Background(), *s, &disgord.Message{ // DM feature
 		Embeds: []*disgord.Embed{embed},
 	})
 	if err != nil && errorMessage != "" { // typical error is user having DMs disabled
 		baseReply(msg, s, errorMessage) // this covers network errors because it also handles errors
 	}
+	// note - does not have standard logging when successful
 }
 
 func baseTextFileReply(msg *disgord.Message, s *disgord.Session, content string, fileName string, fileContents string) {
+	if s == nil { // for testing, will never happen in the wild
+		fmt.Println(fileName + " - " + content[:50] + "...")
+		return
+	}
+
 	_, err := msg.Reply(context.Background(), *s, disgord.CreateMessage{
 		Content: content,
 		Files: []disgord.CreateMessageFile{
@@ -144,6 +175,16 @@ func baseTextFileReply(msg *disgord.Message, s *disgord.Session, content string,
 			},
 		},
 	})
+	msgerr(err, msg, s)
+}
+
+func baseReact(msg *disgord.Message, s *disgord.Session, emoji interface{}) {
+	if s == nil { // for testing, will never happen in the wild
+		fmt.Println("(reaction)", emoji)
+		return
+	}
+
+	err := msg.React(context.Background(), *s, emoji)
 	msgerr(err, msg, s)
 }
 
@@ -331,10 +372,7 @@ func aboutResponse(msg *disgord.Message, s *disgord.Session, nocb bool) {
 		},
 	}
 
-	err := msg.React(context.Background(), *s, "👍")
-	if err != nil {
-		println(err.Error())
-	}
+	baseReact(msg, s, "👍")
 	baseEmbedDMReply(msg, s, embed, "Your DMs are not open! Feel free to find the information on https://tras.almostd.one.")
 }
 
@@ -612,7 +650,7 @@ func bigTypeRespones(word string, text string, thin bool, msg *disgord.Message, 
 	bigString = strings.ReplaceAll(bigString, "_", inchar)
 	bigString = strings.ReplaceAll(bigString, "c", word)
 
-	if len(bigString) > 400 {
+	if len(bigString) > 400 { // arbitrary number from trial and error
 		baseTextFileReply(msg, s, "The result is over 400 characters, so I made it a file.", "big.txt", bigString)
 	} else {
 		baseReply(msg, s, "```\n"+bigString+"\n```")

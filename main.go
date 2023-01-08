@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"discordless"
+
 	"github.com/andersfylling/disgord"
 	"github.com/andersfylling/disgord/std"
 )
@@ -80,6 +82,9 @@ func main() {
 		MessageCreate(func(s disgord.Session, evt *disgord.MessageCreate) {                                              // on message
 			go parseCommand(evt.Message, &s)
 		})
+
+	//unit testing
+	discordless.Test(discordless.ParseCommand(parseCommand))
 }
 
 func parseCommand(msg *disgord.Message, s *disgord.Session) {
@@ -93,11 +98,9 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 	args := []string{}
 	argsl := []string{}
 
-	for i := 0; i < len(carr); i++ {
-		if !strings.Contains(carr[i], BotID) { // ignore where bot is mentioned
-			args = append(args, carr[i])
-			argsl = append(argsl, strings.ToLower(carr[i]))
-		}
+	for i := 1; i < len(carr); i++ { // first argument should always be bot mention
+		args = append(args, carr[i])
+		argsl = append(argsl, strings.ToLower(carr[i]))
 	}
 
 	if len(args) < 1 { // prevent error in switch case

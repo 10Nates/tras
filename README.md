@@ -175,4 +175,9 @@ __GENERAL DETAILS__
 <br>
 <br>
 
+![TRAS logo](src/traslogo.png)
+
+<br>
+<br>
+
 ## Copyright (c) 2023 Nathan B. (10Nates)

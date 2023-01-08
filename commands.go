@@ -324,7 +324,7 @@ func aboutResponse(msg *disgord.Message, s *disgord.Session, nocb bool) {
 			IconURL: BotPFP,
 		},
 		Description: content,
-		Thumbnail: &disgord.EmbedThumbnail{
+		Image: &disgord.EmbedImage{
 			URL: "https://github.com/10Nates/tras/raw/main/src/traslogo.png",
 		},
 	}

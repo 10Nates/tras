@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"github.com/andersfylling/snowflake/v5"
@@ -23,10 +23,10 @@ func NewDivision(divType byte, divID snowflake.Snowflake) Division {
 	return Division(string(divType) + divID.HexString())
 }
 
-// custom commands, also used in custom.go
+// custom command data, also used in customcmds.go
 type CustomCommand struct {
-	key     string
-	val     string
-	divType byte
-	divID   uint64
+	Key     string
+	Val     string
+	DivType byte
+	DivID   uint64
 }

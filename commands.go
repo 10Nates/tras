@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"db"
+
 	"github.com/andersfylling/disgord"
 )
 
@@ -20,15 +22,15 @@ import (
 
 // helpers
 
-func getDivision(msg *disgord.Message) Division {
+func getDivision(msg *disgord.Message) db.Division {
 	if msg.GuildID != 0 {
-		return NewDivision('G', msg.GuildID)
+		return db.NewDivision('G', msg.GuildID)
 	}
 	// if it is not a guild, use the author's ID as the ID
 	if msg.Author.ID != 0 {
-		return NewDivision('U', msg.Author.ID)
+		return db.NewDivision('U', msg.Author.ID)
 	}
-	return NewDivision('T', 0) // test/temporary, discard
+	return db.NewDivision('T', 0) // test/temporary, discard
 }
 
 func getPerms(msg *disgord.Message) (disgord.PermissionBit, error) {

@@ -1,12 +1,14 @@
 package main
 
 import (
+	"db"
+
 	"github.com/andersfylling/disgord"
 )
 
 // This file implements all the functions for handling server-specific custom commands
 
-func getGuildCustomCommandsFields(DID Division) ([]*disgord.EmbedField, error) {
+func getGuildCustomCommandsFields(DID db.Division) ([]*disgord.EmbedField, error) {
 	cmds, err := getCustomCommands(DID)
 	if err != nil {
 		return nil, err
@@ -24,8 +26,8 @@ func getGuildCustomCommandsFields(DID Division) ([]*disgord.EmbedField, error) {
 	newEmbedFields := []*disgord.EmbedField{}
 	for i := 0; i < len(cmds); i++ { // generative embeds
 		newEmbedFields = append(newEmbedFields, &disgord.EmbedField{
-			Name:  "_ _\n@TRAS " + cmds[i].key,
-			Value: "I respond " + cmds[i].val,
+			Name:  "_ _\n@TRAS " + cmds[i].Key,
+			Value: "I respond " + cmds[i].Val,
 		})
 	}
 	if len(newEmbedFields) == 0 { // no embeds on server
@@ -38,15 +40,15 @@ func getGuildCustomCommandsFields(DID Division) ([]*disgord.EmbedField, error) {
 	return newEmbedFields, nil
 }
 
-func getCustomCommands(guildID Division) ([]*CustomCommand, error) {
-	return []*CustomCommand{}, nil // TODO: implement custom commands
+func getCustomCommands(guildID db.Division) ([]*db.CustomCommand, error) {
+	return []*db.CustomCommand{}, nil // TODO: implement custom commands
 }
 
-func newCustomCommand(key string, val string, div Division) *CustomCommand {
-	return &CustomCommand{
-		key:     key,
-		val:     val,
-		divType: div.Type(), // U for user, G for guild
-		divID:   uint64(div.Snowflake()),
+func newCustomCommand(key string, val string, div db.Division) *db.CustomCommand {
+	return &db.CustomCommand{
+		Key:     key,
+		Val:     val,
+		DivType: div.Type(), // U for user, G for guild
+		DivID:   uint64(div.Snowflake()),
 	}
 }

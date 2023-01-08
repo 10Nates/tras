@@ -2,14 +2,13 @@ package main
 
 import (
 	"context"
+	"discordless"
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"os"
 	"strings"
 	"time"
-
-	"discordless"
 
 	"github.com/andersfylling/disgord"
 	"github.com/andersfylling/disgord/std"
@@ -53,6 +52,9 @@ func main() {
 
 	BotClient = client
 
+	//unit testing
+	discordless.Test(parseCommand)
+
 	//startup message
 	client.Gateway().BotReady(func() {
 		usr, err := client.CurrentUser().Get()
@@ -82,9 +84,6 @@ func main() {
 		MessageCreate(func(s disgord.Session, evt *disgord.MessageCreate) {                                              // on message
 			go parseCommand(evt.Message, &s)
 		})
-
-	//unit testing
-	discordless.Test(discordless.ParseCommand(parseCommand))
 }
 
 func parseCommand(msg *disgord.Message, s *disgord.Session) {
@@ -227,7 +226,7 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 		}
 	case "ascii":
 		if len(argsl) > 1 && argsl[1] == "art" {
-
+			defaultTODOResponse(msg, s) // TODO: ascii art
 		} else {
 			defaultResponse(msg, s)
 		}

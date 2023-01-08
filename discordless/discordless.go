@@ -9,11 +9,7 @@ import (
 
 type ParseCommand func(msg *disgord.Message, s *disgord.Session)
 
-func Test(handler ParseCommand) {
-	CreateHeadlessMessage("<@462051981863682048> about", "test", handler)
-}
-
-func CreateHeadlessMessage(content string, identifier string, handler ParseCommand) *disgord.Message {
+func CreateHeadlessMessage(content string, identifier string) (*disgord.Message, *disgord.Session) {
 	var s *disgord.Session
 
 	newmsg := &disgord.Message{
@@ -26,11 +22,19 @@ func CreateHeadlessMessage(content string, identifier string, handler ParseComma
 		EditedTimestamp: disgord.Time{Time: time.Now()},
 	}
 
-	handler(newmsg, s)
-
-	return newmsg
+	return newmsg, s
 }
 
-func HeadlessReact(emoji interface{}) {
-	fmt.Println("Responded with emoji: ", emoji)
+func HeadlessReply(content string, identifier string) {
+	if identifier == "TEST" {
+		return // No need to send anywhere - only checking for errors
+	}
+	fmt.Println(content) // TODO: Custom API reply
+}
+
+func HeadlessReact(emoji interface{}, identifier string) {
+	if identifier == "TEST" {
+		return // No need to send anywhere - only checking for errors
+	}
+	fmt.Println("Reacted: ", emoji) // TODO: Custom API react
 }

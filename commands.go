@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"discordless"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -30,7 +31,7 @@ func getDivision(msg *disgord.Message) db.Division {
 	if msg.Author.ID != 0 {
 		return db.NewDivision('U', msg.Author.ID)
 	}
-	return db.NewDivision('T', 0) // test/temporary, discard
+	return db.NewDivision('H', 0) // headless
 }
 
 func getPerms(msg *disgord.Message) (disgord.PermissionBit, error) {
@@ -93,7 +94,9 @@ func queryWiktionary(word string) (*WikiRes, error) {
 
 func msgerr(err error, msg *disgord.Message, s *disgord.Session) {
 	if err != nil {
-		if s != nil { // in case of headless message
+		if s == nil { // in case of headless message
+			discordless.HeadlessReply("An error occured. Please report this as a bug.```prolog\n"+err.Error()+"```", msg.Author.Email)
+		} else {
 			msg.Reply(context.Background(), *s, "An error occured. Please report this as a bug.```prolog\n"+err.Error()+"```")
 		}
 		fmt.Printf("\033[31mError handling message\nAuthor: %s (%d)\nContent: \"%s\"\nError: ", msg.Author.Tag(), msg.Author.ID, msg.Content)
@@ -105,7 +108,7 @@ func msgerr(err error, msg *disgord.Message, s *disgord.Session) {
 
 func baseReply(msg *disgord.Message, s *disgord.Session, reply string) {
 	if s == nil { // for testing, will never happen in the wild
-		fmt.Println(reply)
+		discordless.HeadlessReply(reply, msg.Author.Email)
 		return
 	}
 
@@ -126,7 +129,7 @@ func baseEmbedReply(msg *disgord.Message, s *disgord.Session, embed *disgord.Emb
 		if err != nil {
 			fmt.Println(err)
 		}
-		fmt.Println(string(resp))
+		discordless.HeadlessReply(string(resp), msg.Author.Email)
 		return
 	}
 
@@ -147,7 +150,7 @@ func baseEmbedDMReply(msg *disgord.Message, s *disgord.Session, embed *disgord.E
 		if err != nil {
 			fmt.Println(err)
 		}
-		fmt.Println(string(resp))
+		discordless.HeadlessReply(string(resp), msg.Author.Email)
 		return
 	}
 
@@ -162,7 +165,7 @@ func baseEmbedDMReply(msg *disgord.Message, s *disgord.Session, embed *disgord.E
 
 func baseTextFileReply(msg *disgord.Message, s *disgord.Session, content string, fileName string, fileContents string) {
 	if s == nil { // for testing, will never happen in the wild
-		fmt.Println(fileName + " - " + content[:50] + "...")
+		discordless.HeadlessReply(fileName+" - "+content[:50]+"...", msg.Author.Email)
 		return
 	}
 
@@ -180,7 +183,7 @@ func baseTextFileReply(msg *disgord.Message, s *disgord.Session, content string,
 
 func baseReact(msg *disgord.Message, s *disgord.Session, emoji interface{}) {
 	if s == nil { // for testing, will never happen in the wild
-		fmt.Println("(reaction)", emoji)
+		discordless.HeadlessReact(emoji, msg.Author.Email)
 		return
 	}
 
@@ -392,6 +395,13 @@ func piResponse(msg *disgord.Message, s *disgord.Session) {
 func pingResponse(info bool, msg *disgord.Message, s *disgord.Session, procTimeStart time.Time) {
 	if !info {
 		baseReply(msg, s, "Pong!")
+		return
+	}
+
+	if s == nil {
+		// Headless mode leaks into this function since there's no good way to
+		// Implement updated respones and such
+		baseReply(msg, s, "Ping info is unavailable for headless commands")
 		return
 	}
 

@@ -325,7 +325,7 @@ func aboutResponse(msg *disgord.Message, s *disgord.Session, nocb bool) {
 		},
 		Description: content,
 		Thumbnail: &disgord.EmbedThumbnail{
-			URL: "https://github.com/10Nates/src/traslogo.png",
+			URL: "https://github.com/10Nates/tras/raw/main/src/traslogo.png",
 		},
 	}
 

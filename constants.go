@@ -12,6 +12,8 @@ var argumentSplitRegex = regexp.MustCompile(`([^\\](\\\\)*)( )`)
 
 var punctuationSplitRegex = regexp.MustCompile(`^([^a-zA-Z0-9]*)(.+?)([^a-zA-Z0-9]*)$`)
 
+var htmlTagsRegex = regexp.MustCompile(`<(.+?)>`)
+
 var capsRegex = regexp.MustCompile(`[A-Z]`)
 
 const BOT_ABOUT_INFO = `

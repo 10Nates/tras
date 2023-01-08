@@ -9,6 +9,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -47,27 +48,19 @@ func hasPerm(bit disgord.PermissionBit, perm disgord.PermissionBit) bool {
 }
 
 type WikiRes struct {
-	BatchComplete bool `json:"batchcomplete"`
-	Query         struct {
-		Pages []struct {
-			PageID     int    `json:"pageid"`
-			Ns         int    `json:"ns"`
-			Title      string `json:"title"`
-			Missing    bool   `json:"missing"`
-			Categories []struct {
-				Ns    int    `json:"ns"`
-				Title string `json:"title"`
-			} `json:"categories"`
-			Extract string `json:"extract"`
-		} `json:"pages"`
-	} `json:"query"`
+	En []struct {
+		PartOfSpeech string `json:"partOfSpeech"`
+		Definitions  []struct {
+			Definition string `json:"definition"`
+		} `json:"definitions"`
+	} `json:"en"`
 }
 
 func queryWiktionary(word string) (*WikiRes, error) {
 	// query
 	fmted := strings.ReplaceAll(word, " ", "_")
 	fmted = url.QueryEscape(fmted)
-	url := "https://simple.wiktionary.org/w/api.php?action=query&format=json&prop=categories%7Cextracts&titles=" + fmted + "&formatversion=2&explaintext=1"
+	url := "https://en.wiktionary.org/api/rest_v1/page/definition/" + fmted
 	res, err := http.Get(url)
 
 	// handle
@@ -630,48 +623,50 @@ func wordInfoReply(info string, word string, msg *disgord.Message, s *disgord.Se
 		msgerr(err, msg, s)
 		return
 	}
-	q := res.Query.Pages[0]
-
-	if q.Missing {
-		baseReply(msg, s, "This word is not available on Wiktionary. Are you sure this is a real English word?\n\n*Note: This is case sensitive**")
-		return
-	}
+	q := res.En
 
 	if info == "def" {
 		// format
-		extract := q.Extract
-		extract = strings.ReplaceAll(extract, "\\n", "\n")
-		extract = strings.ReplaceAll(extract, "== ", "**__")
-		extract = strings.ReplaceAll(extract, " ==", "__**")
-		sections := strings.Split(extract, "\n\n")
-
-		// hyphens for subsections
-		for i, v := range sections {
-			section := strings.Split(v, "\n")
-			if len(section) > 2 {
-				for i2, v2 := range section[3:] {
-					section[i2+3] = "- " + v2
+		parts := map[string]string{}
+		for _, v := range q {
+			_, exists := parts[v.PartOfSpeech]
+			if !exists { // only displays the first etymology, unless the second etymology has other parts of speech
+				for i2, v2 := range v.Definitions {
+					// 								numbered list 					remove html tags
+					parts[v.PartOfSpeech] += "\n" + strconv.Itoa(i2+1) + ". " + htmlTagsRegex.ReplaceAllString(v2.Definition, "")
 				}
 			}
-			sections[i] = strings.Join(section, "\n")
+		}
+
+		resp := ""
+		for k, v := range parts {
+			resp += "**_" + k + "_**" + v + "\n\n"
 		}
 
 		// reply
-		extfmted := strings.Join(sections[1:], "\n")
-		baseReply(msg, s, extfmted)
+		baseReply(msg, s, resp)
 
 	} else if info == "cat" {
 		// format
-		var categories []string
-		for _, v := range q.Categories {
-			categories = append(categories, strings.Replace(v.Title, "Category:", "", 1))
+		parts := map[string]bool{}
+		for _, v := range q {
+			parts[v.PartOfSpeech] = true
 		}
 
-		// reply
-		catfmtd := "\n**__Categories__**\n- " + strings.Join(categories, "\n- ")
-		catfmtd += "\n\n*Note: all Wiktionary categories, not just parts of speech*"
+		keys := make([]string, 0, len(parts))
+		for k := range parts {
+			keys = append(keys, k)
+		}
 
-		baseReply(msg, s, catfmtd)
+		resp := ""
+		if len(keys) > 1 {
+			resp += "- "
+		}
+
+		resp += strings.Join(keys, "\n- ")
+
+		// reply
+		baseReply(msg, s, resp)
 
 	} else {
 		panic("Internal command incorrectly used")

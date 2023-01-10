@@ -141,8 +141,8 @@ __LIST OF COMMANDS__
 > Responds "What's up?"
  
 ### Generated messages
-> Fully generated messages *(not an AI so they're completely nonsensical)* can be toggled as the fallback instead of the default response.
-> Feature was degraded from its former glory by changes to the Discord API.
+> Fully generated messages *(not an AI so they're completely nonsensical)* can be toggled to randomly
+> say them in response to  user messages. Random messages will not reply to commands.
 > Toggle random messages with `@TRAS speak randomspeak [on/off]`
 
 <br>

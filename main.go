@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"discordless"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -52,9 +51,6 @@ func main() {
 
 	BotClient = client
 
-	//unit testing
-	discordless.Test(parseCommand)
-
 	//startup message
 	client.Gateway().BotReady(func() {
 		usr, err := client.CurrentUser().Get()
@@ -84,6 +80,12 @@ func main() {
 		MessageCreate(func(s disgord.Session, evt *disgord.MessageCreate) {                                              // on message
 			go parseCommand(evt.Message, &s)
 		})
+
+	// client.Gateway().
+	// 	WithMiddleware(content.NotByBot, content.NotByWebhook).
+	// 	MessageCreate(func(s disgord.Session, evt *disgord.MessageCreate) { // on message (any)
+	// 		Soon to be used for ranking and randomspeak
+	// 	})
 }
 
 func parseCommand(msg *disgord.Message, s *disgord.Session) {

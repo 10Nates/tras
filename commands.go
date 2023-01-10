@@ -10,6 +10,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -50,7 +51,7 @@ func hasPerm(bit disgord.PermissionBit, perm disgord.PermissionBit) bool {
 	return bit.Contains(perm) || bit.Contains(disgord.PermissionAdministrator) || bit.Contains(disgord.PermissionAll)
 }
 
-type WikiRes struct {
+type WikiRes struct { // for parsing Wiktionary response
 	En []struct {
 		PartOfSpeech string `json:"partOfSpeech"`
 		Definitions  []struct {
@@ -95,12 +96,16 @@ func queryWiktionary(word string) (*WikiRes, error) {
 func msgerr(err error, msg *disgord.Message, s *disgord.Session) {
 	if err != nil {
 		if s == nil { // in case of headless message
-			discordless.HeadlessReply("An error occured. Please report this as a bug.```prolog\n"+err.Error()+"```", msg.Author.Email)
+			discordless.HeadlessReply("An error occurred. Please report this as a bug.```prolog\n"+err.Error()+"```", msg.Author.Email)
 		} else {
-			msg.Reply(context.Background(), *s, "An error occured. Please report this as a bug.```prolog\n"+err.Error()+"```")
+			msg.Reply(context.Background(), *s, "An error occurred. Please report this as a bug.```prolog\n"+err.Error()+"```")
 		}
-		fmt.Printf("\033[31mError handling message\nAuthor: %s (%d)\nContent: \"%s\"\nError: ", msg.Author.Tag(), msg.Author.ID, msg.Content)
-		fmt.Println(err, "\033[0m")
+		// Error handling message
+		// Author: XXXXXX#XXXX (XXXXX)
+		// Content: "<@462051981863682048> XXXXXXXXX"
+		// Error: XXXXXXX
+		fmt.Fprintf(os.Stderr, "\033[31mError handling message\nAuthor: %s (%d)\nContent: \"%s\"\nError: %s\033[0m\n",
+			msg.Author.Tag(), msg.Author.ID, msg.Content, err)
 	} else {
 		fmt.Printf("Responded to \"%s\" from %d\n", msg.Content, msg.Author.ID) // logging
 	}
@@ -160,7 +165,7 @@ func baseEmbedDMReply(msg *disgord.Message, s *disgord.Session, embed *disgord.E
 	if err != nil && errorMessage != "" { // typical error is user having DMs disabled
 		baseReply(msg, s, errorMessage) // this covers network errors because it also handles errors
 	}
-	// note - does not have standard logging when successful
+	// note - does not have standard logging when successful as it is often used for spammmy stuff
 }
 
 func baseTextFileReply(msg *disgord.Message, s *disgord.Session, content string, fileName string, fileContents string) {
@@ -299,7 +304,7 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 			},
 			{
 				Name:  "_ _\n@TRAS speak",
-				Value: "Generate a sentence, repeat messages (requires send perms), and toggle and get status of fallback generated messages. Toggling requires 'Manage Messages' perms. Fallback messages off by default.\n*Format: @TRAS speak [generate/randomspeak] [(randomspeak)on/off/status//(generate)starter]*",
+				Value: "Generate a sentence, plus toggle and get the status of random generated messages. Toggling requires 'Manage Messages' perms. Random messages off by default.\n*Format: @TRAS speak [generate/randomspeak] [(randomspeak)on/off/status//(generate)starter]*",
 			},
 			{
 				Name:  "_ _\n@TRAS combinations",
@@ -698,7 +703,7 @@ func wordInfoReply(info string, word string, msg *disgord.Message, s *disgord.Se
 
 	} else if info == "cat" {
 		// format
-		parts := map[string]bool{}
+		parts := map[string]bool{} // only one instance of each part of speech (possible duplicates in original)
 		for _, v := range q {
 			parts[v.PartOfSpeech] = true
 		}

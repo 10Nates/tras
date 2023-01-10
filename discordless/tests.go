@@ -1,6 +1,9 @@
 package discordless
 
+import "time"
+
 // File for unit testing but instead of it being automated I look at it with my eyes
+// Later implemented in another file with actual automation
 
 var tests = []string{
 	"help",
@@ -46,13 +49,26 @@ var tests = []string{
 
 	"combinations words The quick brown fox",
 	"combinations characters Hello",
+
 	"ping",
 	"ping info",
 }
 
-func Test(handler ParseCommand) {
+var testChannel = make(chan string)
+
+func Test(handler ParseCommand) []string {
 	prefix := "<@462051981863682048> "
+
+	res := []string{}
 	for _, test := range tests {
 		handler(CreateHeadlessMessage(prefix+test, "TEST"))
+		select {
+		case v := <-testChannel:
+			res = append(res, v)
+		case <-time.After(5 * time.Second):
+			res = append(res, "An error occurred. INTERNAL TIMEOUT")
+		}
 	}
+
+	return res
 }

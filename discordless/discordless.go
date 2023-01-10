@@ -7,6 +7,9 @@ import (
 	"github.com/andersfylling/disgord"
 )
 
+// This file creates discordless/headless messages and assists in parsing their results.
+// This allows for tests and other external calls
+
 type ParseCommand func(msg *disgord.Message, s *disgord.Session)
 
 func CreateHeadlessMessage(content string, identifier string) (*disgord.Message, *disgord.Session) {
@@ -16,7 +19,6 @@ func CreateHeadlessMessage(content string, identifier string) (*disgord.Message,
 		Author: &disgord.User{
 			Email: identifier, // allows source reference later down the line, not necessarily an actual email
 		},
-		Member:          &disgord.Member{},
 		Content:         content,
 		Timestamp:       disgord.Time{Time: time.Now()},
 		EditedTimestamp: disgord.Time{Time: time.Now()},
@@ -27,14 +29,22 @@ func CreateHeadlessMessage(content string, identifier string) (*disgord.Message,
 
 func HeadlessReply(content string, identifier string) {
 	if identifier == "TEST" {
-		return // No need to send anywhere - only checking for errors
+		go func() { // non-blocking
+			testChannel <- content // send for error checking & printing
+		}()
+		return
 	}
+
 	fmt.Println(content) // TODO: Custom API reply
 }
 
 func HeadlessReact(emoji interface{}, identifier string) {
 	if identifier == "TEST" {
-		return // No need to send anywhere - only checking for errors
+		go func() { // non-blocking
+			testChannel <- fmt.Sprint("(reaction)", emoji) // send for error checking & printing
+		}()
+		return
 	}
+
 	fmt.Println("Reacted: ", emoji) // TODO: Custom API react
 }

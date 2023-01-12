@@ -183,6 +183,7 @@ func baseTextFileReply(msg *disgord.Message, s *disgord.Session, content string,
 			},
 		},
 	})
+
 	msgerr(err, msg, s)
 }
 
@@ -726,4 +727,40 @@ func wordInfoReply(info string, word string, msg *disgord.Message, s *disgord.Se
 	} else {
 		panic("Internal command incorrectly used")
 	}
+}
+
+func combosResponse(set []string, msg *disgord.Message, s *disgord.Session) {
+	if len(set) > 13 {
+		baseReply(msg, s, "Sorry, this command only works with under 14 items due to processing time.")
+		return
+	}
+
+	procTimeStart := time.Now() // timer for ping info
+
+	// generate powerset https://sevko.io/articles/power-set-algorithms/
+	sets := []string{""}
+
+	for _, element := range set {
+		for i := range sets {
+			if sets[i] == "" {
+				sets = append(sets, element)
+			} else {
+				sets = append(sets, sets[i]+", "+element)
+			}
+		}
+	}
+
+	// slower algorithm: https://stackoverflow.com/questions/45267983/code-to-generate-powerset-in-golang-gives-wrong-result
+
+	// format result
+	resultfmt := ""
+	for _, v := range sets {
+		resultfmt += v + "\n"
+	}
+
+	procTime := time.Since(procTimeStart)
+	fmt.Println(procTime.Seconds(), "seconds")
+
+	//return
+	baseTextFileReply(msg, s, "Here's a file of all the combinations.", "combos.txt", resultfmt)
 }

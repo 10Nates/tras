@@ -1,3 +1,5 @@
+github.com/alphadose/itogami v0.4.0 h1:rODlsJi0O66QEU8O0s3vWCfvHylx8uD9lGrZAj6QKP8=
+github.com/alphadose/itogami v0.4.0/go.mod h1:djI1vuSef+44Ik61DOZcd04m7eyyY0kqcf7LmH98vC4=
 github.com/andersfylling/disgord v0.36.0 h1:U1PzgrqpizAcgApRNdhYQ/WPoH3WRL29l030CYfNu5w=
 github.com/andersfylling/disgord v0.36.0/go.mod h1:GVmNoBOlnQyX1NrABUIpZWv94j2sArpyHXU1KWTi4jc=
 github.com/andersfylling/snowflake/v5 v5.0.1 h1:unXbYSij6tRCGJzoLz9zl3nJsqd9hu7bbYSgB8K8/i0=

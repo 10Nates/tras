@@ -254,8 +254,27 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 		}
 	case "speak":
 		defaultTODOResponse(msg, s) // TODO: speak
-	case "combinations", "combos":
-		defaultTODOResponse(msg, s) // TODO: combinations
+	case "combinations", "combos", "powerset":
+		if len(argsl) > 1 { // option
+			if len(argsl) > 2 { // text
+				switch argsl[1] {
+				case "words", "w":
+					combosResponse(args[2:], msg, s)
+
+				case "characters", "chars", "c":
+					text := strings.Join(args[2:], " ")
+					ltrs := strings.Split(text, "")
+
+					combosResponse(ltrs, msg, s)
+				default:
+					baseReply(msg, s, "That's not an option.")
+				}
+			} else {
+				baseReply(msg, s, "What do you want the combinations for?")
+			}
+		} else {
+			baseReply(msg, s, "Which combinations do you want? Words, or characters?")
+		}
 	case "ping":
 		if len(argsl) > 1 && (argsl[1] == "info" || argsl[1] == "information") {
 			pingResponse(true, msg, s, procTimeStart)

@@ -15,7 +15,6 @@ import (
 
 var BotID string // loaded on init
 var BotPFP string
-var BotClient *disgord.Client
 var BigTypeLetters map[string]map[string]string // this is way easier than the alternative
 var ThesaurusLookup map[string][]string
 var GRand = rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -48,8 +47,6 @@ func main() {
 			disgord.IntentGuildMessageReactions | disgord.IntentDirectMessageReactions,
 	})
 	defer client.Gateway().StayConnectedUntilInterrupted()
-
-	BotClient = client
 
 	//startup message
 	client.Gateway().BotReady(func() {

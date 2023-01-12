@@ -35,11 +35,11 @@ func getDivision(msg *disgord.Message) db.Division {
 	return db.NewDivision('H', 0) // headless
 }
 
-func getPerms(msg *disgord.Message) (disgord.PermissionBit, error) {
+func getPerms(msg *disgord.Message, s *disgord.Session) (disgord.PermissionBit, error) {
 	if msg.GuildID == 0 { // DMs
 		return disgord.PermissionBit(math.MaxUint64), nil // every permission feasible
 	}
-	bit, err := BotClient.Guild(msg.GuildID).Member(msg.Author.ID).GetPermissions()
+	bit, err := (*s).Guild(msg.GuildID).Member(msg.Author.ID).GetPermissions()
 	if err != nil {
 		return 0, err
 	}
@@ -410,7 +410,7 @@ func pingResponse(info bool, msg *disgord.Message, s *disgord.Session, procTimeS
 		return
 	}
 
-	hbTime, err := BotClient.AvgHeartbeatLatency()
+	hbTime, err := (*s).AvgHeartbeatLatency()
 	if err != nil {
 		msgerr(err, msg, s)
 		return
@@ -430,7 +430,7 @@ func pingResponse(info bool, msg *disgord.Message, s *disgord.Session, procTimeS
 		"`Response Latency:  " + m.Timestamp.Sub(msg.Timestamp.Time).String() + "`\n" +
 		"*Response Latency is response msg date - initial msg date*"
 
-	_, err = BotClient.Channel(msg.ChannelID).Message(m.ID).Update(&disgord.UpdateMessage{ // edit message
+	_, err = (*s).Channel(msg.ChannelID).Message(m.ID).Update(&disgord.UpdateMessage{ // edit message
 		Content: &resp,
 	})
 	msgerr(err, msg, s)
@@ -580,7 +580,7 @@ func overcompResponse(words []string, msg *disgord.Message, s *disgord.Session) 
 // settings
 
 func setNickResponse(newNick string, msg *disgord.Message, s *disgord.Session) {
-	perms, err := getPerms(msg)
+	perms, err := getPerms(msg, s)
 	if err != nil {
 		msgerr(err, msg, s)
 		return
@@ -601,7 +601,7 @@ func setNickResponse(newNick string, msg *disgord.Message, s *disgord.Session) {
 		newNick = ""
 		re = "re" // tell user the right thing
 	}
-	_, err = BotClient.Guild(msg.GuildID).SetCurrentUserNick(newNick)
+	_, err = (*s).Guild(msg.GuildID).SetCurrentUserNick(newNick)
 	if err != nil {
 		msgerr(err, msg, s)
 		return

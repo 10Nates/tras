@@ -1,6 +1,7 @@
 package main
 
 import (
+	"db"
 	"discordless"
 	"testing"
 )
@@ -27,4 +28,23 @@ func TestParser(t *testing.T) {
 	if t.Failed() {
 		t.Logf("Number failed: %d/%d", nF, len(res))
 	}
+}
+
+func TestDatabase(t *testing.T) {
+	conn := &db.Connection{
+		Host:     "localhost",
+		Port:     5432,
+		Password: "Sulfur1-Capacity",
+		DBName:   "tras",
+	}
+
+	conn.Connect()
+	conn.CloseOnInterrupt()
+
+	cmd, err := conn.AddCustomCommand("test", "this is a test", db.NewDivision('H', 0))
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	t.Log(cmd.ID, cmd.Key, cmd.Val)
 }

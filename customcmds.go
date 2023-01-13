@@ -46,9 +46,7 @@ func getCustomCommands(guildID db.Division) ([]*db.CustomCommand, error) {
 
 func newCustomCommand(key string, val string, div db.Division) *db.CustomCommand {
 	return &db.CustomCommand{
-		Key:     key,
-		Val:     val,
-		DivType: div.Type(), // U for user, G for guild
-		DivID:   uint64(div.Snowflake()),
+		Key: key,
+		Val: val,
 	}
 }

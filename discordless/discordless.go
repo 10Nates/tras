@@ -41,7 +41,7 @@ func HeadlessReply(content string, identifier string) {
 func HeadlessReact(emoji interface{}, identifier string) {
 	if identifier == "TEST" {
 		go func() { // non-blocking
-			testChannel <- fmt.Sprint("(reaction)", emoji) // send for error checking & printing
+			testChannel <- fmt.Sprint("(reaction) ", emoji) // send for error checking & printing
 		}()
 		return
 	}

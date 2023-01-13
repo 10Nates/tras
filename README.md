@@ -46,7 +46,7 @@ __LIST OF COMMANDS__
 
 ### `@TRAS big`
 > Make a larger verison of word/text made of the letter. 
-> Starts getting wonky with emojis. Becomes file over 520 characters. 
+> Starts getting wonky with emojis. Becomes file over 400 characters. 
 > You can enable thin letters with -t or --thin.
 > 
 > Format: `@TRAS big (-t/--thin) [letter] [text]`
@@ -98,9 +98,9 @@ __LIST OF COMMANDS__
 > Format: `@TRAS word info [definition/pos] [word]`
  
 ### `@TRAS ascii art`
-> Generate ascii art. Over 15 characters responds with a file.
+> Generate ascii art. Over 400 characters returns in a file.
 > 
-> Format: `@TRAS ascii art [text/{font:[Font (use "\ " as space)]}/{getFonts}] [(font)text]`
+> Format: `@TRAS ascii art [font/getFonts] [text]`
  
 ### `@TRAS commands`
 > View and manage custom server commands, managing requires "Manage Messages" perms.

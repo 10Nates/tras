@@ -225,7 +225,20 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 		}
 	case "ascii":
 		if len(argsl) > 1 && argsl[1] == "art" {
-			defaultTODOResponse(msg, s) // TODO: ascii art
+			if len(argsl) > 2 {
+				if argsl[2] == "getfonts" {
+					asciiGetFonts(msg, s)
+				} else {
+					if len(argsl) > 3 {
+						text := strings.Join(args[3:], " ")
+						asciiResponse(msg, s, args[2], text, 100) // max width 100, maybe add option in future
+					} else {
+						baseReply(msg, s, "What text do you want to be generated?")
+					}
+				}
+			} else {
+				baseReply(msg, s, "I need to know the [font] and the [text] you want me to use.")
+			}
 		} else {
 			defaultResponse(msg, s)
 		}

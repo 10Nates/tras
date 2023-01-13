@@ -18,6 +18,7 @@ import (
 	"db"
 
 	"github.com/andersfylling/disgord"
+	"github.com/lukesampson/figlet/figletlib"
 )
 
 // This file implements all the functions that directly reply to the commands
@@ -128,6 +129,21 @@ func baseReply(msg *disgord.Message, s *disgord.Session, reply string) {
 	msgerr(err, msg, s)
 }
 
+func baseDMReply(msg *disgord.Message, s *disgord.Session, reply string) {
+	if s == nil { // for testing, will never happen in the wild
+		discordless.HeadlessReply(reply, msg.Author.Email)
+		return
+	}
+
+	_, _, err := msg.Author.SendMsg(context.Background(), *s, &disgord.Message{
+		Content: reply,
+	})
+	if err != nil {
+		msgerr(err, msg, s)
+	}
+	// note - does not have standard logging when successful as it is often used for spammmy stuff
+}
+
 func baseEmbedReply(msg *disgord.Message, s *disgord.Session, embed *disgord.Embed) {
 	if s == nil { // for testing, will never happen in the wild
 		resp, err := json.MarshalIndent(embed, "", "  ")
@@ -170,7 +186,7 @@ func baseEmbedDMReply(msg *disgord.Message, s *disgord.Session, embed *disgord.E
 
 func baseTextFileReply(msg *disgord.Message, s *disgord.Session, content string, fileName string, fileContents string) {
 	if s == nil { // for testing, will never happen in the wild
-		discordless.HeadlessReply(fileName+" - "+content[:50]+"...", msg.Author.Email)
+		discordless.HeadlessReply("(file) "+fileName+" - \n"+content, msg.Author.Email)
 		return
 	}
 
@@ -249,7 +265,7 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 			},
 			{
 				Name:  "_ _\n@TRAS big",
-				Value: "Make a larger version of word/text made of the word. Starts getting wonky with emojis. Becomes file over 520 characters. You can enable thin letters with -t or --thin.\n*Format: @TRAS big (-t/--thin) [letter] [text]*",
+				Value: "Make a larger version of word/text made of the word. Starts getting wonky with emojis. Becomes file over 400 characters. You can enable thin letters with -t or --thin.\n*Format: @TRAS big (-t/--thin) [letter] [text]*",
 			},
 			{
 				Name:  "_ _\n@TRAS jumble",
@@ -289,7 +305,7 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 			},
 			{
 				Name:  "_ _\n@TRAS ascii art",
-				Value: "Generate ascii art. Over 15 characters responds with a file.\n*Format: @TRAS ascii art [text/{font:[Font (use \"\\ \" as space)]}/{getFonts}] [(font)text]*",
+				Value: "Generate ascii art. Becomes file over 400 characters.\n*Format: @TRAS ascii art [font/getFonts] [text]*",
 			},
 			{
 				Name:  "_ _\n@TRAS commands",
@@ -435,6 +451,32 @@ func pingResponse(info bool, msg *disgord.Message, s *disgord.Session, procTimeS
 		Content: &resp,
 	})
 	msgerr(err, msg, s)
+}
+
+func asciiGetFonts(msg *disgord.Message, s *disgord.Session) {
+	names, err := figletlib.FontNamesInDir(FIGFONT_DIR)
+	if err != nil {
+		msgerr(err, msg, s)
+		return
+	}
+
+	respArr := []string{"**__Font List:__** \n"}
+	c := 0
+
+	for i := 0; i < len(names); i++ {
+		if len(respArr[c]+", "+names[i]) > 2000 { // if too large to fit in single message
+			c++
+			respArr = append(respArr, names[i]) // expand array
+		} else {
+			respArr[c] += names[i] + ", "
+		}
+	}
+
+	baseReact(msg, s, "👍")
+	for _, v := range respArr {
+		v = strings.TrimSuffix(v, ", ")
+		baseDMReply(msg, s, v)
+	}
 }
 
 // simple replace
@@ -735,8 +777,6 @@ func combosResponse(set []string, msg *disgord.Message, s *disgord.Session) {
 		return
 	}
 
-	procTimeStart := time.Now() // timer for ping info
-
 	// generate powerset https://sevko.io/articles/power-set-algorithms/
 	sets := []string{""}
 
@@ -758,9 +798,22 @@ func combosResponse(set []string, msg *disgord.Message, s *disgord.Session) {
 		resultfmt += v + "\n"
 	}
 
-	procTime := time.Since(procTimeStart)
-	fmt.Println(procTime.Seconds(), "seconds")
-
 	//return
 	baseTextFileReply(msg, s, "Here's a file of all the combinations.", "combos.txt", resultfmt)
+}
+
+func asciiResponse(msg *disgord.Message, s *disgord.Session, font string, text string, maxwidth int) {
+	figFont, err := figletlib.GetFontByName(FIGFONT_DIR, font)
+	if err != nil {
+		baseReply(msg, s, "I couldn't find that font, sorry. Use `@TRAS ascii art getFonts` for a list.")
+	}
+
+	// generate using figlet go implementation
+	resp := figletlib.SprintMsg(text, figFont, maxwidth, figletlib.Settings{}, "left")
+
+	if len(resp) > 400 {
+		baseTextFileReply(msg, s, "Here is your ascii art, packaged neatly into a file!", "ascii.txt", resp)
+	} else {
+		baseReply(msg, s, "```\n"+resp+"```")
+	}
 }

@@ -27,7 +27,8 @@ var tests = []string{
 	"word info def fox",
 	"word info cat fox",
 
-	"ascii art Hello!",
+	"ascii art getfonts",
+	"ascii art big Hello!",
 
 	"commands view",
 	"commands manage set test works",

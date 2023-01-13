@@ -8,6 +8,8 @@ const BOT_VERSION = "3.0.0"
 
 const BOT_AUTHOR_ID = "186507006008360960"
 
+const FIGFONT_DIR = "src/figfonts/"
+
 var argumentSplitRegex = regexp.MustCompile(`([^\\](\\\\)*)( )`)
 
 var punctuationSplitRegex = regexp.MustCompile(`^([^a-zA-Z0-9]*)(.+?)([^a-zA-Z0-9]*)$`)

@@ -3,6 +3,7 @@ package main
 import (
 	"db"
 	"discordless"
+	"fmt"
 	"testing"
 )
 
@@ -33,18 +34,35 @@ func TestParser(t *testing.T) {
 func TestDatabase(t *testing.T) {
 	conn := &db.Connection{
 		Host:     "localhost",
-		Port:     5432,
+		Port:     55000,
 		Password: "Sulfur1-Capacity",
 		DBName:   "tras",
 	}
 
-	conn.Connect()
-	conn.CloseOnInterrupt()
-
-	cmd, err := conn.AddCustomCommand("test", "this is a test", db.NewDivision('H', 0))
+	err := conn.Connect()
 	if err != nil {
 		t.Log(err)
 		t.Fail()
 	}
-	t.Log(cmd.ID, cmd.Key, cmd.Val)
+	conn.CloseOnInterrupt()
+
+	_, err = conn.AddCustomCommand("test", "this is a test", db.NewDivision('H', 0))
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+
+	_, err = conn.AddCustomCommand("test2", "this is a test 2", db.NewDivision('H', 0))
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+
+	div, err := conn.GetDivsion(db.NewDivision('H', 0))
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+
+	fmt.Printf("div: %v\n", div)
 }

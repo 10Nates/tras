@@ -26,11 +26,17 @@ type RankMember struct {
 type DivisionData struct {
 	Div       Division `pg:",pk"`
 	RandSpeak bool
-	Cmds      []CustomCommand `pg:"rel:has-many"`
-	RankMems  []RankMember    `pg:"rel:has-many"`
+	Cmds      []CustomCommand
+	RankMems  []RankMember
 }
 
 func createSchema(db *pg.DB) error {
+	// I had to do this to get it to work
+	_, err := db.ExecOne(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`)
+	if err != nil {
+		return err
+	}
+
 	models := []interface{}{
 		(*CustomCommand)(nil),
 		(*RankMember)(nil),

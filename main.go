@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"db"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -18,6 +19,7 @@ var BotPFP string
 var BigTypeLetters map[string]map[string]string // this is way easier than the alternative
 var ThesaurusLookup map[string][]string
 var GRand = rand.New(rand.NewSource(time.Now().UnixNano()))
+var DBConn *db.Connection
 
 func main() {
 	// load bigtype letters
@@ -38,6 +40,13 @@ func main() {
 	err = json.Unmarshal(thesarusjson, &ThesaurusLookup)
 	if err != nil {
 		panic(err)
+	}
+
+	DBConn = &db.Connection{
+		Host:     "localhost",
+		Port:     5432,
+		Password: os.Getenv("DB_PASSWORD"),
+		DBName:   "tras",
 	}
 
 	//load client
@@ -105,6 +114,10 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 		args = append(args, "")
 		argsl = append(argsl, "")
 	}
+
+	// custom commands never override standard
+	// commands to prevent deadlock
+	parseCustomCommand(msg, s, argsl[0])
 
 	switch argsl[0] {
 	case "help":
@@ -243,7 +256,47 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 			defaultResponse(msg, s)
 		}
 	case "commands", "cmds":
-		defaultTODOResponse(msg, s) // TODO: commands
+		if len(argsl) > 1 && argsl[1] == "view" {
+			handleViewCustomCommands(msg, s)
+		} else if len(argsl) > 2 && argsl[2] == "manage" {
+			// check for permissions
+			perms, err := getPerms(msg, s)
+			if err != nil {
+				msgerr(err, msg, s)
+				return
+			}
+			if !hasPerm(perms, disgord.PermissionAdministrator) {
+				baseReply(msg, s, "You don't have administrator permission. Sorry!")
+				return
+			}
+
+			// restricted cases
+			word := ""
+			if len(argsl) > 3 {
+				word = argsl[3]
+			}
+			switch word {
+			case "set":
+				if len(argsl) > 5 {
+					text := strings.Join(args[5:], " ")
+					handleSetCustomCommand(msg, s, argsl[4], text)
+				} else {
+					baseReply(msg, s, "You need to tell me the [trigger] and [what I should respond with].")
+				}
+			case "delete":
+				if len(argsl) > 4 {
+					handleDeleteCustomCommand(msg, s, argsl[4])
+				} else {
+					baseReply(msg, s, "You need to tell me the [trigger] to delete.")
+				}
+			case "schedule":
+				defaultTODOResponse(msg, s) // TODO: schedule feature
+			default:
+				baseReply(msg, s, "The format for manage is `@TRAS commands manage [set/delete/schedule] [(set/delete)trigger//(schedule)time of day (hh:mm:ss)] [(set/schedule)reply]`")
+			}
+		} else {
+			baseReply(msg, s, "Would you like to [view] the commands, or [manage] them as the admin?")
+		}
 	case "rank":
 		defaultTODOResponse(msg, s) // TODO: ranks
 	case "set":

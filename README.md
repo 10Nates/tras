@@ -103,7 +103,7 @@ __LIST OF COMMANDS__
 > Format: `@TRAS ascii art [font/getFonts] [text]`
  
 ### `@TRAS commands`
-> View and manage custom server commands, managing requires "Manage Messages" perms.
+> View and manage custom server commands, managing requires administrator perms.
 > Custom commands feature requires TRAS Deluxe TBD.
 > 
 > Format: `@TRAS commands [manage/view] [(manage)...]`
@@ -113,7 +113,8 @@ __LIST OF COMMANDS__
 > Shows your rank, lets your reset your rank, and allows you to roll dice for a new rank if it's enabled. 
 > Admins get other commands as well. Dice rolling disabled by default.
 > 
-> Format: `@TRAS rank [info/checkDice/dice/reset] [user(4resetORset,admin)/amount(4set,admin)/-real(4info)] [amount(4set,admin)]`
+> Format: `@TRAS rank [info/checkDice/dice] [(info)-real]`
+> Format (admin): `@TRAS rank [set/reset/toggleDice] [(set/reset)user] [amount]`
  
 ### `@TRAS set nickname`
 > Set the bot's Nickname on the server. Reset with "{RESET}". 

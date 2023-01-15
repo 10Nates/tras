@@ -8,6 +8,8 @@ import (
 
 // This file implements all the functions for handling server-specific custom commands
 
+// helpers
+
 func getGuildCustomCommandsFields(DID db.Division) ([]*disgord.EmbedField, error) {
 	cmds, err := getCustomCommands(DID)
 	if err != nil {
@@ -40,13 +42,79 @@ func getGuildCustomCommandsFields(DID db.Division) ([]*disgord.EmbedField, error
 	return newEmbedFields, nil
 }
 
-func getCustomCommands(guildID db.Division) ([]*db.CustomCommand, error) {
-	return []*db.CustomCommand{}, nil // TODO: implement custom commands
+func getCustomCommands(div db.Division) ([]*db.CustomCommand, error) {
+	divData, err := DBConn.GetDivsion(div)
+	if err != nil {
+		return nil, err
+	}
+
+	return divData.Cmds, nil
 }
 
-func newCustomCommand(key string, val string, div db.Division) *db.CustomCommand {
-	return &db.CustomCommand{
-		Key: key,
-		Val: val,
+// handlers
+
+func handleViewCustomCommands(msg *disgord.Message, s *disgord.Session) {
+	div := getDivision(msg)
+	cmds, err := getCustomCommands(div)
+	if err != nil {
+		msgerr(err, msg, s)
+		return
 	}
+
+	respArr := []string{"**__ Commands List:__** \n"}
+	c := 0
+
+	for _, cc := range cmds {
+		entry := "- \"" + cc.Key + "\", returns: \"" + cc.Val + "\""
+		if len(respArr[c]+entry+"\n") > 2000 { // if too large to fit in single message
+			c++
+			respArr = append(respArr, entry) // expand array
+		} else {
+			respArr[c] += entry + "\n"
+		}
+	}
+
+	baseReact(msg, s, "👍")
+	for _, v := range respArr {
+		baseDMReply(msg, s, v)
+	}
+}
+
+func handleSetCustomCommand(msg *disgord.Message, s *disgord.Session, key string, value string) {
+	div := getDivision(msg)
+
+	_, err := DBConn.SetCustomCommand(key, value, div)
+	if err != nil {
+		msgerr(err, msg, s)
+	}
+
+	baseReply(msg, s, "Command \""+key+"\" set successfully!")
+}
+
+func handleDeleteCustomCommand(msg *disgord.Message, s *disgord.Session, key string) {
+	div := getDivision(msg)
+	err := DBConn.RemoveCustomCommand(key, div)
+	if err != nil {
+		msgerr(err, msg, s)
+	}
+
+	baseReply(msg, s, "Command \""+key+"\" removed successfully!")
+}
+
+func parseCustomCommand(msg *disgord.Message, s *disgord.Session, arg string) bool {
+	div := getDivision(msg)
+
+	cmds, err := getCustomCommands(div)
+	if err != nil {
+		msgerr(err, msg, s)
+	}
+
+	for _, cc := range cmds {
+		if arg == cc.Key {
+			baseReply(msg, s, cc.Val)
+			return true
+		}
+	}
+
+	return false
 }

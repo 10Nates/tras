@@ -31,10 +31,11 @@ func TestParser(t *testing.T) {
 	}
 }
 
-func TestDatabase(t *testing.T) {
+func TestCCDatabase(t *testing.T) {
+	// COnnect
 	conn := &db.Connection{
 		Host:     "localhost",
-		Port:     55000,
+		Port:     55001,
 		Password: "Sulfur1-Capacity",
 		DBName:   "tras",
 	}
@@ -46,23 +47,76 @@ func TestDatabase(t *testing.T) {
 	}
 	conn.CloseOnInterrupt()
 
-	_, err = conn.AddCustomCommand("test", "this is a test", db.NewDivision('H', 0))
+	d := db.NewDivision('H', 0)
+
+	// Add commands
+	_, err = conn.SetCustomCommand("test", "this is a test", d)
 	if err != nil {
 		t.Log(err)
 		t.Fail()
 	}
 
-	_, err = conn.AddCustomCommand("test2", "this is a test 2", db.NewDivision('H', 0))
+	_, err = conn.SetCustomCommand("test2", "this is a test 2", d)
 	if err != nil {
 		t.Log(err)
 		t.Fail()
 	}
 
-	div, err := conn.GetDivsion(db.NewDivision('H', 0))
+	// check
+	div, err := conn.GetDivsion(d)
 	if err != nil {
 		t.Log(err)
 		t.Fail()
 	}
-
 	fmt.Printf("div: %v\n", div)
+	for _, cc := range div.Cmds {
+		fmt.Printf("%v\n", cc)
+	}
+
+	// Alter commands
+	_, err = conn.SetCustomCommand("test", "this is an alternate test", d)
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+
+	_, err = conn.SetCustomCommand("test2", "this is another alt test", d)
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+
+	// check
+	div2, err := conn.GetDivsion(d)
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	fmt.Printf("div2: %v\n", div2)
+	for _, cc := range div2.Cmds {
+		fmt.Printf("%v\n", cc)
+	}
+
+	// Remove commands
+	err = conn.RemoveCustomCommand("test", d)
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	err = conn.RemoveCustomCommand("test2", d)
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+
+	// check
+	div3, err := conn.GetDivsion(d)
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	fmt.Printf("div3: %v\n", div3)
+	for _, cc := range div3.Cmds {
+		fmt.Printf("%v\n", cc)
+	}
 }

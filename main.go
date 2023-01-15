@@ -262,7 +262,7 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 			defaultResponse(msg, s)
 		}
 	case "commands", "cmds":
-		if len(argsl) > 1 && argsl[1] == "view" {
+		if len(argsl) > 1 && (argsl[1] == "view" || argsl[1] == "list") {
 			handleViewCustomCommands(msg, s)
 		} else if len(argsl) > 1 && argsl[1] == "manage" {
 			// check for permissions
@@ -354,7 +354,7 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 			pingResponse(false, msg, s, procTimeStart)
 		}
 	default:
-		if !successful_cc {
+		if !successful_cc { // doesn't do a default response if there was a custom command
 			defaultResponse(msg, s)
 		}
 	}

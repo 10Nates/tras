@@ -42,12 +42,18 @@ func main() {
 		panic(err)
 	}
 
+	// connect to DB
 	DBConn = &db.Connection{
 		Host:     "localhost",
 		Port:     5432,
 		Password: os.Getenv("DB_PASSWORD"),
 		DBName:   "tras",
 	}
+	err = DBConn.Connect()
+	if err != nil {
+		panic(err)
+	}
+	DBConn.CloseOnInterrupt()
 
 	//load client
 	client := disgord.New(disgord.Config{
@@ -117,7 +123,7 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 
 	// custom commands never override standard
 	// commands to prevent deadlock
-	parseCustomCommand(msg, s, argsl[0])
+	successful_cc := parseCustomCommand(msg, s, argsl[0])
 
 	switch argsl[0] {
 	case "help":
@@ -258,7 +264,7 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 	case "commands", "cmds":
 		if len(argsl) > 1 && argsl[1] == "view" {
 			handleViewCustomCommands(msg, s)
-		} else if len(argsl) > 2 && argsl[2] == "manage" {
+		} else if len(argsl) > 1 && argsl[1] == "manage" {
 			// check for permissions
 			perms, err := getPerms(msg, s)
 			if err != nil {
@@ -272,20 +278,20 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 
 			// restricted cases
 			word := ""
-			if len(argsl) > 3 {
-				word = argsl[3]
+			if len(argsl) > 2 {
+				word = argsl[2]
 			}
 			switch word {
 			case "set":
-				if len(argsl) > 5 {
-					text := strings.Join(args[5:], " ")
-					handleSetCustomCommand(msg, s, argsl[4], text)
+				if len(argsl) > 4 {
+					text := strings.Join(args[4:], " ")
+					handleSetCustomCommand(msg, s, argsl[3], text)
 				} else {
 					baseReply(msg, s, "You need to tell me the [trigger] and [what I should respond with].")
 				}
-			case "delete":
-				if len(argsl) > 4 {
-					handleDeleteCustomCommand(msg, s, argsl[4])
+			case "delete", "del", "remove", "rem", "reset":
+				if len(argsl) > 3 {
+					handleDeleteCustomCommand(msg, s, argsl[3])
 				} else {
 					baseReply(msg, s, "You need to tell me the [trigger] to delete.")
 				}
@@ -348,6 +354,8 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 			pingResponse(false, msg, s, procTimeStart)
 		}
 	default:
-		defaultResponse(msg, s)
+		if !successful_cc {
+			defaultResponse(msg, s)
+		}
 	}
 }

@@ -39,7 +39,7 @@ func (c *Connection) SetCustomCommand(key string, value string, div Division) (*
 	divData := &DivisionData{
 		Div: div,
 	}
-	_, err = tx.Model(divData).SelectOrInsert()
+	_, err = tx.Model(divData).WherePK().SelectOrInsert()
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (c *Connection) GetDivsion(div Division) (*DivisionData, error) {
 	divData := &DivisionData{
 		Div: div,
 	}
-	_, err = tx.Model(divData).SelectOrInsert()
+	_, err = tx.Model(divData).WherePK().SelectOrInsert()
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func (c *Connection) RemoveCustomCommand(key string, div Division) error {
 	divData := &DivisionData{
 		Div: div,
 	}
-	_, err = tx.Model(divData).SelectOrInsert()
+	_, err = tx.Model(divData).WherePK().SelectOrInsert()
 	if err != nil {
 		return err
 	}

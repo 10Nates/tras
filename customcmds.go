@@ -51,7 +51,7 @@ func getCustomCommands(div db.Division) ([]*db.CustomCommand, error) {
 	return divData.Cmds, nil
 }
 
-// handlers
+// internal handlers
 
 func handleViewCustomCommands(msg *disgord.Message, s *disgord.Session) {
 	div := getDivision(msg)
@@ -101,6 +101,8 @@ func handleDeleteCustomCommand(msg *disgord.Message, s *disgord.Session, key str
 	baseReply(msg, s, "Command \""+key+"\" removed successfully!")
 }
 
+// parser
+
 func parseCustomCommand(msg *disgord.Message, s *disgord.Session, arg string) bool {
 	div := getDivision(msg)
 
@@ -113,6 +115,7 @@ func parseCustomCommand(msg *disgord.Message, s *disgord.Session, arg string) bo
 		if arg == cc.Key {
 			baseReply(msg, s, cc.Val)
 			return true
+			// break
 		}
 	}
 

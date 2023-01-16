@@ -16,6 +16,21 @@ func BenchmarkParser(b *testing.B) {
 }
 
 func TestParser(t *testing.T) {
+	// Connect
+	DBConn = &db.Connection{
+		Host:     DB_HOST,
+		Port:     DB_PORT,
+		Password: "Sulfur1-Capacity", // dev only password
+		DBName:   DB_NAME,
+	}
+
+	err := DBConn.Connect()
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	DBConn.CloseOnInterrupt()
+
 	res := discordless.Test(parseCommand)
 
 	nF := 0
@@ -32,12 +47,12 @@ func TestParser(t *testing.T) {
 }
 
 func TestCCDatabase(t *testing.T) {
-	// COnnect
+	// Connect
 	conn := &db.Connection{
-		Host:     "localhost",
-		Port:     55001,
-		Password: "Sulfur1-Capacity",
-		DBName:   "tras",
+		Host:     DB_HOST,
+		Port:     DB_PORT,
+		Password: "Sulfur1-Capacity", // dev only password
+		DBName:   DB_NAME,
 	}
 
 	err := conn.Connect()

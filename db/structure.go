@@ -19,8 +19,9 @@ type RankMember struct {
 	ID         uuid.UUID `pg:",pk,type:uuid,default:uuid_generate_v4()"`
 	UserID     uint64
 	Progress   int64
-	LastMsgTs  time.Time
-	LastChanID uint64 // guildID
+	LastMsgTs  time.Time // used for base attentiveness score
+	LastChanID uint64    // score booster
+	LastDiv    Division  // score booster
 }
 
 type DivisionData struct {

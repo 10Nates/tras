@@ -6,7 +6,9 @@ import (
 	"github.com/andersfylling/disgord"
 )
 
-// This file implements all the functions for handling server-specific custom commands
+// This file implements special features, such as custom commands and ranking
+
+// -- Custom commands --
 
 // helpers
 
@@ -51,7 +53,7 @@ func getCustomCommands(div db.Division) ([]*db.CustomCommand, error) {
 	return divData.Cmds, nil
 }
 
-// internal handlers
+// handlers
 
 func handleViewCustomCommands(msg *disgord.Message, s *disgord.Session) {
 	div := getDivision(msg)
@@ -121,3 +123,13 @@ func parseCustomCommand(msg *disgord.Message, s *disgord.Session, arg string) bo
 
 	return false
 }
+
+// -- Ranking --
+
+// + helpers
+
+func calcMessageScore(msg *disgord.Message) (int64, error) {
+	return 0, nil // TODO: calculate message score
+}
+
+// + handlers

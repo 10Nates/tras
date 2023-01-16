@@ -44,10 +44,10 @@ func main() {
 
 	// connect to DB
 	DBConn = &db.Connection{
-		Host:     "localhost",
-		Port:     5432,
+		Host:     DB_HOST,
+		Port:     DB_PORT,
 		Password: os.Getenv("DB_PASSWORD"),
-		DBName:   "tras",
+		DBName:   DB_NAME,
 	}
 	err = DBConn.Connect()
 	if err != nil {
@@ -90,14 +90,24 @@ func main() {
 	client.Gateway().
 		WithMiddleware(content.NotByBot, content.NotByWebhook, content.ContainsBotMention, content.HasBotMentionPrefix). // filter
 		MessageCreate(func(s disgord.Session, evt *disgord.MessageCreate) {                                              // on message
+			// used for standard message parsing
 			go parseCommand(evt.Message, &s)
 		})
 
-	// client.Gateway().
-	// 	WithMiddleware(content.NotByBot, content.NotByWebhook).
-	// 	MessageCreate(func(s disgord.Session, evt *disgord.MessageCreate) { // on message (any)
-	// 		Soon to be used for ranking and randomspeak
-	// 	})
+	client.Gateway().
+		WithMiddleware(content.NotByBot, content.NotByWebhook).
+		MessageCreate(func(s disgord.Session, evt *disgord.MessageCreate) { // on message (any)
+			if content.ContainsBotMention(evt) != nil { // middleware !content.ContainsBotMention
+				return
+			}
+			// used for ranking and randomspeak
+
+			m, err := json.MarshalIndent(evt.Message, "", "  ")
+			if err != nil {
+				return
+			}
+			fmt.Println(string(m))
+		})
 }
 
 func parseCommand(msg *disgord.Message, s *disgord.Session) {

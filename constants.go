@@ -10,6 +10,12 @@ const BOT_AUTHOR_ID = "186507006008360960"
 
 const FIGFONT_DIR = "src/figfonts/"
 
+const DB_HOST = "localhost"
+
+const DB_PORT = 5432
+
+const DB_NAME = "tras"
+
 var argumentSplitRegex = regexp.MustCompile(`([^\\](\\\\)*)( )`)
 
 var punctuationSplitRegex = regexp.MustCompile(`^([^a-zA-Z0-9]*)(.+?)([^a-zA-Z0-9]*)$`)
@@ -32,6 +38,8 @@ Text Response Automation System
 '''](https://bit.ly/gotras)['''md
 [Top.gg Page](https://top.gg/bot/494273862427738113)
 '''](https://top.gg/bot/494273862427738113)['''md
+[Community](https://discord.gg/nMprsNGewJ)
+'''](https://discord.gg/nMprsNGewJ)['''md
 [Git Repo](https://github.com/10Nates/tras)
 '''](https://github.com/10Nates/tras)'''py
 #################'''['''md

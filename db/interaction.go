@@ -3,6 +3,7 @@ package db
 import (
 	"errors"
 
+	"github.com/andersfylling/disgord"
 	"github.com/andersfylling/snowflake/v5"
 	"github.com/google/uuid"
 )
@@ -41,6 +42,7 @@ func (c *Connection) SetCustomCommand(key string, value string, div Division) (*
 	}
 	_, err = tx.Model(divData).WherePK().SelectOrInsert()
 	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 
@@ -68,6 +70,7 @@ func (c *Connection) SetCustomCommand(key string, value string, div Division) (*
 		// update preexisting command in database
 		_, err := tx.Model(cmd).WherePK().Update()
 		if err != nil {
+			tx.Rollback()
 			return nil, err
 		}
 
@@ -83,6 +86,7 @@ func (c *Connection) SetCustomCommand(key string, value string, div Division) (*
 		}
 		_, err = tx.Model(cmd).Insert()
 		if err != nil {
+			tx.Rollback()
 			return nil, err
 		}
 
@@ -92,13 +96,15 @@ func (c *Connection) SetCustomCommand(key string, value string, div Division) (*
 	}
 
 	// update divsion data
-	_, err = tx.Model(divData).WherePK().Update()
+	_, err = tx.Model(divData).WherePK().UpdateNotZero()
 	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 
 	err = tx.Commit()
 	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 
@@ -118,11 +124,14 @@ func (c *Connection) GetDivsion(div Division) (*DivisionData, error) {
 	}
 	_, err = tx.Model(divData).WherePK().SelectOrInsert()
 	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 
+	// need to commit because DivisionData is created
 	err = tx.Commit()
 	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 
@@ -142,6 +151,7 @@ func (c *Connection) RemoveCustomCommand(key string, div Division) error {
 	}
 	_, err = tx.Model(divData).WherePK().SelectOrInsert()
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
@@ -159,6 +169,7 @@ func (c *Connection) RemoveCustomCommand(key string, div Division) error {
 
 	var cmd *CustomCommand
 	if !exists {
+		tx.Rollback()
 		return errors.New("does not exist")
 	}
 
@@ -168,19 +179,22 @@ func (c *Connection) RemoveCustomCommand(key string, div Division) error {
 	}
 	_, err = tx.Model(cmd).WherePK().Delete()
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
 	// command was deleted from division data in for loop
 
 	// update divsion data
-	_, err = tx.Model(divData).WherePK().Update()
+	_, err = tx.Model(divData).WherePK().UpdateNotZero()
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
 	err = tx.Commit()
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
@@ -193,10 +207,116 @@ func removeSliceItem(s []*CustomCommand, i int) []*CustomCommand {
 	return s[:len(s)-1]
 }
 
-func (c *Connection) AddMemberRankProgress(user snowflake.Snowflake, div Division, progress int64) error {
-	return nil // TODO: Implement member ranks
+func (c *Connection) SetRankMemberProgress(msg *disgord.Message, div Division, progress int64) error {
+	// start transaction
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	// fetch division data
+	divData := &DivisionData{
+		Div: div,
+	}
+	_, err = tx.Model(divData).WherePK().SelectOrInsert()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// find member
+	var mem *RankMember
+	for _, rm := range divData.RankMems {
+		if rm.UserID == uint64(msg.Author.ID) {
+			mem = rm
+			break
+		}
+	}
+
+	if mem == nil {
+		// add member to database
+		mem = &RankMember{
+			ID:         uuid.New(),
+			UserID:     uint64(msg.Author.ID),
+			Progress:   progress,
+			LastMsgTs:  msg.Timestamp.Time,
+			LastChanID: uint64(msg.ChannelID),
+		}
+
+		_, err = tx.Model(mem).Insert()
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		divData.RankMems = append(divData.RankMems, mem)
+
+	} else {
+		// member does exist, update member
+		mem.Progress = progress
+		mem.LastMsgTs = msg.Timestamp.Time
+		mem.LastChanID = uint64(msg.ChannelID)
+
+		// update member in database
+		_, err := tx.Model(mem).WherePK().Update()
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// update divsion data
+	_, err = tx.Model(divData).WherePK().UpdateNotZero()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
 }
 
-func (c *Connection) GetMemberRankProgress(user snowflake.Snowflake, div Division) (int64, error) {
-	return 0, nil // TODO: Implement member ranks
+func (c *Connection) GetRankMember(uID disgord.Snowflake, div Division) (*RankMember, error) {
+	// start transaction
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	// fetch division data
+	divData := &DivisionData{
+		Div: div,
+	}
+	_, err = tx.Model(divData).WherePK().SelectOrInsert()
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	// find member
+	var mem *RankMember
+	for _, rm := range divData.RankMems {
+		if rm.UserID == uint64(uID) {
+			mem = rm
+			break
+		}
+	}
+
+	// need to commit because DivisionData is created
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	if mem == nil {
+		return new(RankMember), nil // if member does not exist, it is 0.
+	} else {
+		return mem, nil
+	}
 }

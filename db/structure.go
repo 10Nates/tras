@@ -21,14 +21,14 @@ type RankMember struct {
 	Progress   int64
 	LastMsgTs  time.Time // used for base attentiveness score
 	LastChanID uint64    // score booster
-	LastDiv    Division  // score booster
 }
 
 type DivisionData struct {
-	Div       Division `pg:",pk"`
-	RandSpeak bool
-	Cmds      []*CustomCommand
-	RankMems  []*RankMember
+	Div           Division `pg:",pk"`
+	RandSpeak     bool
+	LastRandSpeak time.Time // used to manage randSpeak interval
+	Cmds          []*CustomCommand
+	RankMems      []*RankMember
 }
 
 func createSchema(db *pg.DB) error {

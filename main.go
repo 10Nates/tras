@@ -102,11 +102,8 @@ func main() {
 			}
 			// used for ranking and randomspeak
 
-			m, err := json.MarshalIndent(evt.Message, "", "  ")
-			if err != nil {
-				return
-			}
-			fmt.Println(string(m))
+			updateMemberProgress(evt.Message)
+			// TODO: randomspeak
 		})
 }
 
@@ -314,7 +311,37 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 			baseReply(msg, s, "Would you like to [view] the commands, or [manage] them as the admin?")
 		}
 	case "rank":
-		defaultTODOResponse(msg, s) // TODO: ranks
+		if len(argsl) > 1 {
+			switch argsl[1] {
+			case "info":
+				defaultTODOResponse(msg, s) // TODO: rank info
+			case "checkdice":
+				defaultTODOResponse(msg, s) // TODO: rank dice
+			case "dice":
+				defaultTODOResponse(msg, s) // TODO: rank dice
+			case "set", "reset", "toggledice":
+				// check for permissions
+				perms, err := getPerms(msg, s)
+				if err != nil {
+					msgerr(err, msg, s)
+					return
+				}
+				if !hasPerm(perms, disgord.PermissionAdministrator) {
+					baseReply(msg, s, "You don't have administrator permission. Sorry!")
+					return
+				}
+				switch argsl[1] {
+				case "set":
+					defaultTODOResponse(msg, s) // TODO: rank set
+				case "reset":
+					defaultTODOResponse(msg, s) // TODO: rank reset
+				case "toggledice":
+					defaultTODOResponse(msg, s) // TODO: rank toggledice
+				}
+			}
+		} else {
+			baseReply(msg, s, "What'd ya like about ranks? I got info, checkDice, and dice, as well as set, reset, and toggleDice for y'all admins.")
+		}
 	case "set":
 		if len(argsl) > 1 && (argsl[1] == "nickname" || argsl[1] == "nick") {
 			text := strings.Join(args[2:], " ") // case sensitive

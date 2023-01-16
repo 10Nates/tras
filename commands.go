@@ -92,6 +92,15 @@ func queryWiktionary(word string) (*WikiRes, error) {
 	return &resp, nil
 }
 
+func logmsgerr(msg *disgord.Message, err error) {
+	// Error handling message
+	// Author: XXXXXX#XXXX (XXXXX)
+	// Content: "<@462051981863682048> XXXXXXXXX"
+	// Error: XXXXXXX
+	fmt.Fprintf(os.Stderr, "\033[31mError handling message\nAuthor: %s (%d)\nContent: \"%s\"\nError: %s\033[0m\n",
+		msg.Author.Tag(), msg.Author.ID, msg.Content, err)
+}
+
 // templates
 
 func msgerr(err error, msg *disgord.Message, s *disgord.Session) {
@@ -101,12 +110,7 @@ func msgerr(err error, msg *disgord.Message, s *disgord.Session) {
 		} else {
 			msg.Reply(context.Background(), *s, "An error occurred. Please report this as a bug.```prolog\n"+err.Error()+"```")
 		}
-		// Error handling message
-		// Author: XXXXXX#XXXX (XXXXX)
-		// Content: "<@462051981863682048> XXXXXXXXX"
-		// Error: XXXXXXX
-		fmt.Fprintf(os.Stderr, "\033[31mError handling message\nAuthor: %s (%d)\nContent: \"%s\"\nError: %s\033[0m\n",
-			msg.Author.Tag(), msg.Author.ID, msg.Content, err)
+		logmsgerr(msg, err)
 	} else {
 		fmt.Printf("Responded to \"%s\" from %d\n", msg.Content, msg.Author.ID) // logging
 	}

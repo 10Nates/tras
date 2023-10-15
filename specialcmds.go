@@ -3,6 +3,9 @@ package main
 import (
 	"db"
 	"math"
+	"math/rand"
+	"strconv"
+	"time"
 
 	"github.com/andersfylling/disgord"
 	"github.com/andersfylling/snowflake/v5"
@@ -90,6 +93,7 @@ func handleSetCustomCommand(msg *disgord.Message, s *disgord.Session, key string
 	_, err := DBConn.SetCustomCommand(key, value, div)
 	if err != nil {
 		msgerr(err, msg, s)
+		return
 	}
 
 	baseReply(msg, s, "Command \""+key+"\" set successfully!")
@@ -100,6 +104,7 @@ func handleDeleteCustomCommand(msg *disgord.Message, s *disgord.Session, key str
 	err := DBConn.RemoveCustomCommand(key, div)
 	if err != nil {
 		msgerr(err, msg, s)
+		return
 	}
 
 	baseReply(msg, s, "Command \""+key+"\" removed successfully!")
@@ -113,6 +118,7 @@ func parseCustomCommand(msg *disgord.Message, s *disgord.Session, arg string) bo
 	cmds, err := getCustomCommands(div)
 	if err != nil {
 		msgerr(err, msg, s) // msgerr is warranted here because we know that they at least pinged the bot
+		return false
 	}
 
 	for _, cc := range cmds {
@@ -226,4 +232,24 @@ func toggleDiceStatus(msg *disgord.Message) (bool, error) {
 func forceSetUserRank(msg *disgord.Message, uID disgord.Snowflake, newProgress int64) error {
 	err := DBConn.SetRankMemberProgress(msg, uID, getDivision(msg), newProgress)
 	return err
+}
+
+func diceRollResponse(msg *disgord.Message, s *disgord.Session) {
+	// Sets your progress to a random value within 100 levels
+	rand.Seed(time.Now().UnixNano())
+	newLevel := rand.Float64() * 100
+	newProgress := int64(math.Pow(float64(newLevel), 2))
+	err := forceSetUserRank(msg, msg.Author.ID, newProgress)
+	if err != nil {
+		msgerr(err, msg, s)
+		return
+	}
+
+	// Modified from commands.go/getUserRankInfo
+	levelStr := strconv.Itoa(int(newLevel))
+	progStr := strconv.Itoa(int(newProgress))
+	nextMilestone := strconv.Itoa(int(math.Pow(math.Floor(newLevel)+1, 2)))
+
+	baseReply(msg, s, "Dice rolled! Your stats are now:\n"+
+		"Level:"+levelStr+"\n"+"Progress:"+progStr+"/"+nextMilestone)
 }

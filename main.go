@@ -331,7 +331,16 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 				}
 				baseReply(msg, s, "Dice rolls are currently "+statusStr)
 			case "dice":
-				defaultTODOResponse(msg, s) // TODO: rank dice
+				diceEnabled, err := getDiceStatus(msg)
+				if err != nil {
+					msgerr(err, msg, s)
+					return
+				}
+				if diceEnabled {
+					diceRollResponse(msg, s)
+				} else {
+					baseReply(msg, s, "Sorry, dice rolls are currently disabled.\nAsk an admin to `@TRAS rank toggledice` if you want to play dice on this server.")
+				}
 			case "set", "reset", "toggledice":
 				// check for permissions
 				perms, err := getPerms(msg, s)

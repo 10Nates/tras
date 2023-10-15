@@ -501,6 +501,7 @@ func getUserRankInfo(msg *disgord.Message, s *disgord.Session, user disgord.Snow
 	rankMem, err := DBConn.GetRankMember(user, getDivision(msg))
 	if err != nil {
 		msgerr(err, msg, s)
+		return
 	}
 	level := int(math.Log2(float64(rankMem.Progress)))
 	levelStr := strconv.Itoa(level)

@@ -320,3 +320,78 @@ func (c *Connection) GetRankMember(uID disgord.Snowflake, div Division) (*RankMe
 		return mem, nil
 	}
 }
+
+func (c *Connection) SetDiceAvailability(div Division, enabled bool) error {
+	// start transaction
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	// fetch division data
+	divData := &DivisionData{
+		Div: div,
+	}
+	_, err = tx.Model(divData).WherePK().SelectOrInsert()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// modify
+	divData.Dice = enabled
+
+	// update divsion data
+	_, err = tx.Model(divData).WherePK().UpdateNotZero()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// need to commit because DivisionData is created
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
+}
+
+// Copy of SetDiceAvailability with different boolean to change
+func (c *Connection) SetRandomSpeakAvailability(div Division, enabled bool) error {
+	// start transaction
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	// fetch division data
+	divData := &DivisionData{
+		Div: div,
+	}
+	_, err = tx.Model(divData).WherePK().SelectOrInsert()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// modify
+	divData.RandSpeak = enabled
+
+	// update divsion data
+	_, err = tx.Model(divData).WherePK().UpdateNotZero()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// need to commit because DivisionData is created
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
+}

@@ -382,7 +382,7 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 						baseReply(msg, s, "You need to tell me the [user] to reset the progress of.")
 					}
 				case "toggledice":
-					defaultTODOResponse(msg, s) // TODO: rank toggledice
+					toggleDiceResponse(msg, s)
 				}
 			default:
 				user, validMention := extractSnowflake(argsl[1])
@@ -390,7 +390,18 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 					getUserRankInfo(msg, s, user)
 					return
 				}
-				// TODO: command info
+
+				// check for permissions
+				perms, err := getPerms(msg, s)
+				if err != nil {
+					msgerr(err, msg, s)
+					return
+				}
+				helpContent := "The format is `@TRAS rank [info/checkDice/dice] [(info)-real]`"
+				if hasPerm(perms, disgord.PermissionAdministrator) {
+					helpContent += "\nThe format for admin controls is `@TRAS rank [set/reset/toggleDice] [(set/reset)user] [value]`"
+				}
+				baseReply(msg, s, helpContent)
 			}
 		} else {
 			getUserRankInfo(msg, s, msg.Author.ID)

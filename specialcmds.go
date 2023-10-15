@@ -209,15 +209,18 @@ func getDiceStatus(msg *disgord.Message) (bool, error) {
 	return data.Dice, nil
 }
 
-func setDiceStatus(msg *disgord.Message) (bool, error) {
+func toggleDiceStatus(msg *disgord.Message) (bool, error) {
 	curStat, err := getDiceStatus(msg)
 	if err != nil {
 		return false, err
 	}
-	if curStat {
-		// TODO: flip dice status
+
+	err = DBConn.SetDiceAvailability(getDivision(msg), !curStat) // flip status
+	if err != nil {
+		return false, err
 	}
-	return false, nil
+
+	return !curStat, nil
 }
 
 func forceSetUserRank(msg *disgord.Message, uID disgord.Snowflake, newProgress int64) error {

@@ -31,15 +31,25 @@ var tests = []string{
 	"ascii art big Hello!",
 
 	"commands view",
+	"commands manage",
 	"commands manage set test works",
 	"commands manage delete test",
 
 	"rank info",
 	"rank checkDice",
 	"rank dice",
+	"rank set",
+	"rank set invalid",
+	"rank set invalid 42",
+	"rank set <@123456789123456789> invalid",
+	"rank set <@123456789123456789> 42",
 	"rank reset",
+	"rank reset invalid",
+	"rank reset <@123456789123456789>",
 
-	"set nickname TestName",
+	"set nick TestName1",
+	"rest nick",
+	"set nickname TestName2",
 	"rest nickname",
 
 	"speak generate",
@@ -47,6 +57,7 @@ var tests = []string{
 	"speak randomspeak status",
 	"speak randomspeak on",
 	"speak randomspeak off",
+	"speak randomspeak invalid",
 
 	"combinations words The quick brown fox",
 	"combinations characters Hello",

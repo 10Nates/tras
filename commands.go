@@ -682,6 +682,19 @@ func setNickResponse(newNick string, msg *disgord.Message, s *disgord.Session) {
 	baseReply(msg, s, "Nickname "+re+"set!")
 }
 
+func toggleDiceResponse(msg *disgord.Message, s *disgord.Session) {
+	newStatus, err := toggleDiceStatus(msg)
+	if err != nil {
+		msgerr(err, msg, s)
+		return
+	}
+	newStatusStr := "OFF"
+	if newStatus {
+		newStatusStr = "ON"
+	}
+	baseReply(msg, s, "Rank dice are now "+newStatusStr)
+}
+
 // generators
 
 func bigTypeRespones(word string, text string, thin bool, msg *disgord.Message, s *disgord.Session) {

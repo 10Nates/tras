@@ -4,6 +4,7 @@ import (
 	"context"
 	"db"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -419,7 +420,7 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 		if len(argsl) > 1 && (argsl[1] == "nickname" || argsl[1] == "nick") {
 			text := strings.Join(args[2:], " ") // case sensitive
 			if len(argsl) > 2 {
-				setNickResponse(text, msg, s)
+				setNickResponse(text, msg, s) // checks permissions internally
 			} else {
 				baseReply(msg, s, "What should by nickname be?")
 			}
@@ -429,13 +430,71 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 	case "reset":
 		if len(argsl) > 1 && (argsl[1] == "nickname" || argsl[1] == "nick") {
 			// A more natural way of resetting nickname
-			text := "{RESET}" // case sensitive
-			setNickResponse(text, msg, s)
+			text := "{RESET}"             // case sensitive
+			setNickResponse(text, msg, s) // checks permissions internally
 		} else {
 			defaultResponse(msg, s, successful_cc)
 		}
 	case "speak":
-		defaultTODOResponse(msg, s) // TODO: speak
+		if len(argsl) > 1 && argsl[1] == "generate" {
+			if len(argsl) > 2 {
+				defaultTODOResponse(msg, s) // TODO: speak generate with starter
+			} else {
+				defaultTODOResponse(msg, s) // TODO: speak generate without starter
+			}
+		} else if len(argsl) > 1 && argsl[1] == "randomspeak" {
+			if len(argsl) > 2 && (argsl[2] == "on" || argsl[2] == "off") {
+				perms, err := getPerms(msg, s)
+				if err != nil {
+					msgerr(err, msg, s)
+					return
+				}
+
+				if !hasPerm(perms, disgord.PermissionManageMessages) {
+					baseReply(msg, s, "You don't have Manage Messages permissions. Sorry!")
+					return
+				}
+
+				if argsl[2] == "on" {
+					err := DBConn.SetRandomSpeakAvailability(getDivision(msg), true)
+					if err != nil {
+						msgerr(err, msg, s)
+						return
+					}
+					baseReply(msg, s, "Randomspeak has been enabled.")
+
+				} else if argsl[2] == "off" {
+					err := DBConn.SetRandomSpeakAvailability(getDivision(msg), false)
+					if err != nil {
+						msgerr(err, msg, s)
+						return
+					}
+					baseReply(msg, s, "Randomspeak has been disabled.")
+
+				} else {
+					err := errors.New("cosmic bit flip (speak randomspeak on/off)")
+					msgerr(err, msg, s)
+					return
+				}
+
+			} else if len(argsl) > 2 && args[2] == "status" {
+				statusStr := "OFF"
+				data, err := getRandSpeakInfo(msg)
+				if err != nil {
+					msgerr(err, msg, s)
+					return
+				}
+				if data.status {
+					statusStr = "ON"
+				}
+				baseReply(msg, s, "Randspeak is currently "+statusStr)
+
+			} else {
+				baseReply(msg, s, "Would you like to check the [status] or turn it [on] or [off]?")
+			}
+		} else {
+			baseReply(msg, s, "Would you like to [generate] a phrase or manage [randomspeak]?")
+		}
 	case "combinations", "combos", "powerset":
 		if len(argsl) > 1 { // option
 			if len(argsl) > 2 { // text

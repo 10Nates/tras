@@ -203,8 +203,6 @@ func updateMemberProgress(msg *disgord.Message) error {
 	return nil
 }
 
-// handlers
-
 func getDiceStatus(msg *disgord.Message) (bool, error) {
 	div := getDivision(msg)
 	data, err := DBConn.GetDivsion(div)
@@ -234,6 +232,8 @@ func forceSetUserRank(msg *disgord.Message, uID disgord.Snowflake, newProgress i
 	return err
 }
 
+// handlers
+
 func diceRollResponse(msg *disgord.Message, s *disgord.Session) {
 	// Sets your progress to a random value within 100 levels
 	rand.Seed(time.Now().UnixNano())
@@ -252,4 +252,26 @@ func diceRollResponse(msg *disgord.Message, s *disgord.Session) {
 
 	baseReply(msg, s, "Dice rolled! Your stats are now:\n"+
 		"Level:"+levelStr+"\n"+"Progress:"+progStr+"/"+nextMilestone)
+}
+
+// -- Random Speak --
+
+// helpers
+
+type RandSpeakData struct {
+	status        bool
+	LastRandSpeak time.Time
+}
+
+func getRandSpeakInfo(msg *disgord.Message) (*RandSpeakData, error) {
+	div := getDivision(msg)
+	data, err := DBConn.GetDivsion(div)
+	if err != nil {
+		return nil, err
+	}
+
+	return &RandSpeakData{
+		status:        data.RandSpeak,
+		LastRandSpeak: data.LastRandSpeak,
+	}, nil
 }

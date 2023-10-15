@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -247,7 +248,7 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 				baseReply(msg, s, "What type of info do you want? Defintion, or categories?")
 			}
 		} else {
-			defaultResponse(msg, s)
+			defaultResponse(msg, s, successful_cc)
 		}
 	case "ascii":
 		if len(argsl) > 1 && argsl[1] == "art" {
@@ -266,7 +267,7 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 				baseReply(msg, s, "I need to know the [font] and the [text] you want me to use.")
 			}
 		} else {
-			defaultResponse(msg, s)
+			defaultResponse(msg, s, successful_cc)
 		}
 	case "commands", "cmds":
 		if len(argsl) > 1 && (argsl[1] == "view" || argsl[1] == "list") {
@@ -314,9 +315,21 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 		if len(argsl) > 1 {
 			switch argsl[1] {
 			case "info":
-				defaultTODOResponse(msg, s) // TODO: rank info
+				baseReply(msg, s, "TRAS' \"progress\" meter takes various elements of your messages' metadata into account when valuing them.\n"+
+					"This is a differnet approach than TRAS 2 due to the API changes between the sunset of v2 and the creation of v3.\n"+
+					"Levels are the logarithm of your \"progress\" to base 2, meaning you require 2 times the \"progress\" per level."+
+					"\nI included the \"dice roll\" feature as a fun gimmick to portray my thoughts about levels in general - pointless and silly.")
 			case "checkdice":
-				defaultTODOResponse(msg, s) // TODO: rank dice
+				statusStr := "OFF"
+				status, err := getDiceStatus(msg)
+				if err != nil {
+					msgerr(err, msg, s)
+					return
+				}
+				if status {
+					statusStr = "ON"
+				}
+				baseReply(msg, s, "Dice rolls are currently "+statusStr)
 			case "dice":
 				defaultTODOResponse(msg, s) // TODO: rank dice
 			case "set", "reset", "toggledice":
@@ -332,15 +345,55 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 				}
 				switch argsl[1] {
 				case "set":
-					defaultTODOResponse(msg, s) // TODO: rank set
+					if len(argsl) > 3 {
+						user, validMention := extractSnowflake(argsl[2])
+						if !validMention {
+							baseReply(msg, s, "That was not a valid user mention.")
+							return
+						}
+
+						num, err := strconv.Atoi(argsl[3])
+						if err != nil {
+							baseReply(msg, s, "Invalid number!")
+							return
+						}
+
+						err = forceSetUserRank(msg, user, int64(num))
+						if err != nil {
+							msgerr(err, msg, s)
+							return
+						}
+					} else {
+						baseReply(msg, s, "You need to tell me the [user] and the [value] to set the progress to.")
+					}
 				case "reset":
-					defaultTODOResponse(msg, s) // TODO: rank reset
+					if len(argsl) > 2 {
+						user, validMention := extractSnowflake(argsl[2])
+						if !validMention {
+							baseReply(msg, s, "That was not a valid user mention.")
+							return
+						}
+						err := forceSetUserRank(msg, user, 0)
+						if err != nil {
+							msgerr(err, msg, s)
+							return
+						}
+					} else {
+						baseReply(msg, s, "You need to tell me the [user] to reset the progress of.")
+					}
 				case "toggledice":
 					defaultTODOResponse(msg, s) // TODO: rank toggledice
 				}
+			default:
+				user, validMention := extractSnowflake(argsl[1])
+				if validMention {
+					getUserRankInfo(msg, s, user)
+					return
+				}
+				// TODO: command info
 			}
 		} else {
-			baseReply(msg, s, "What'd ya like about ranks? I got info, checkDice, and dice, as well as set, reset, and toggleDice for y'all admins.")
+			getUserRankInfo(msg, s, msg.Author.ID)
 		}
 	case "set":
 		if len(argsl) > 1 && (argsl[1] == "nickname" || argsl[1] == "nick") {
@@ -351,7 +404,7 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 				baseReply(msg, s, "What should by nickname be?")
 			}
 		} else {
-			defaultResponse(msg, s)
+			defaultResponse(msg, s, successful_cc)
 		}
 	case "reset":
 		if len(argsl) > 1 && (argsl[1] == "nickname" || argsl[1] == "nick") {
@@ -359,7 +412,7 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 			text := "{RESET}" // case sensitive
 			setNickResponse(text, msg, s)
 		} else {
-			defaultResponse(msg, s)
+			defaultResponse(msg, s, successful_cc)
 		}
 	case "speak":
 		defaultTODOResponse(msg, s) // TODO: speak
@@ -391,8 +444,6 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 			pingResponse(false, msg, s, procTimeStart)
 		}
 	default:
-		if !successful_cc { // doesn't do a default response if there was a custom command
-			defaultResponse(msg, s)
-		}
+		defaultResponse(msg, s, successful_cc)
 	}
 }

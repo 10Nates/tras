@@ -193,8 +193,34 @@ func updateMemberProgress(msg *disgord.Message) error {
 		return err
 	}
 	div := getDivision(msg)
-	DBConn.SetRankMemberProgress(msg, div, newProg)
+	DBConn.SetRankMemberProgress(msg, msg.Author.ID, div, newProg)
 	return nil
 }
 
 // handlers
+
+func getDiceStatus(msg *disgord.Message) (bool, error) {
+	div := getDivision(msg)
+	data, err := DBConn.GetDivsion(div)
+	if err != nil {
+		return false, err
+	}
+
+	return data.Dice, nil
+}
+
+func setDiceStatus(msg *disgord.Message) (bool, error) {
+	curStat, err := getDiceStatus(msg)
+	if err != nil {
+		return false, err
+	}
+	if curStat {
+		// TODO: flip dice status
+	}
+	return false, nil
+}
+
+func forceSetUserRank(msg *disgord.Message, uID disgord.Snowflake, newProgress int64) error {
+	err := DBConn.SetRankMemberProgress(msg, uID, getDivision(msg), newProgress)
+	return err
+}

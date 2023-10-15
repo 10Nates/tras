@@ -101,6 +101,15 @@ func logmsgerr(msg *disgord.Message, err error) {
 		msg.Author.Tag(), msg.Author.ID, msg.Content, err)
 }
 
+func extractSnowflake(userMention string) (disgord.Snowflake, bool) { // id, isValid
+	potentialID := userNumsRegex.FindString(userMention)
+	snow, err := disgord.GetSnowflake(potentialID)
+	if err != nil {
+		return 0, false
+	}
+	return snow, true // Doesn't validate if the user exists, only validates if it is a valid number that can be converted to a snowflake.
+}
+
 // templates
 
 func msgerr(err error, msg *disgord.Message, s *disgord.Session) {
@@ -226,7 +235,12 @@ func defaultTODOResponse(msg *disgord.Message, s *disgord.Session) {
 	// baseReply(msg, s, "This feature is incomplete. Don't worry, it's coming!")
 }
 
-func defaultResponse(msg *disgord.Message, s *disgord.Session) {
+func defaultResponse(msg *disgord.Message, s *disgord.Session, successfulCustomCommand bool) {
+	if successfulCustomCommand {
+		// doesn't do a default response if there was a custom command
+		// Included at this layer so I don't forget in main
+		return
+	}
 	baseReply(msg, s, defaultResponses[GRand.Intn(len(defaultResponses))])
 }
 
@@ -481,6 +495,18 @@ func asciiGetFonts(msg *disgord.Message, s *disgord.Session) {
 		v = strings.TrimSuffix(v, ", ")
 		baseDMReply(msg, s, v)
 	}
+}
+
+func getUserRankInfo(msg *disgord.Message, s *disgord.Session, user disgord.Snowflake) {
+	rankMem, err := DBConn.GetRankMember(user, getDivision(msg))
+	if err != nil {
+		msgerr(err, msg, s)
+	}
+	level := int(math.Log2(float64(rankMem.Progress)))
+	levelStr := strconv.Itoa(level)
+	progStr := strconv.Itoa(int(rankMem.Progress))
+	nextMilestone := strconv.Itoa(int(math.Pow(float64(level+1), 2)))
+	baseReply(msg, s, "Level:"+levelStr+"\n"+"Progress:"+progStr+"/"+nextMilestone)
 }
 
 // simple replace

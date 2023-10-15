@@ -207,7 +207,7 @@ func removeSliceItem(s []*CustomCommand, i int) []*CustomCommand {
 	return s[:len(s)-1]
 }
 
-func (c *Connection) SetRankMemberProgress(msg *disgord.Message, div Division, progress int64) error {
+func (c *Connection) SetRankMemberProgress(msg *disgord.Message, uID disgord.Snowflake, div Division, progress int64) error {
 	// start transaction
 	tx, err := c.DB.Begin()
 	if err != nil {
@@ -227,7 +227,7 @@ func (c *Connection) SetRankMemberProgress(msg *disgord.Message, div Division, p
 	// find member
 	var mem *RankMember
 	for _, rm := range divData.RankMems {
-		if rm.UserID == uint64(msg.Author.ID) {
+		if rm.UserID == uint64(uID) {
 			mem = rm
 			break
 		}
@@ -237,10 +237,10 @@ func (c *Connection) SetRankMemberProgress(msg *disgord.Message, div Division, p
 		// add member to database
 		mem = &RankMember{
 			ID:         uuid.New(),
-			UserID:     uint64(msg.Author.ID),
+			UserID:     uint64(uID),
 			Progress:   progress,
 			LastMsgTs:  msg.Timestamp.Time,
-			LastChanID: uint64(msg.ChannelID),
+			LastChanID: uint64(msg.ChannelID), // Although this remains inaccurate for force set (uID mismatch) it doesn't really matter
 		}
 
 		_, err = tx.Model(mem).Insert()
@@ -255,7 +255,7 @@ func (c *Connection) SetRankMemberProgress(msg *disgord.Message, div Division, p
 		// member does exist, update member
 		mem.Progress = progress
 		mem.LastMsgTs = msg.Timestamp.Time
-		mem.LastChanID = uint64(msg.ChannelID)
+		mem.LastChanID = uint64(msg.ChannelID) // refer to previous comment
 
 		// update member in database
 		_, err := tx.Model(mem).WherePK().Update()

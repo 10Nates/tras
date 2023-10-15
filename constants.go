@@ -24,6 +24,8 @@ var htmlTagsRegex = regexp.MustCompile(`<(.+?)>`)
 
 var capsRegex = regexp.MustCompile(`[A-Z]`)
 
+var userNumsRegex = regexp.MustCompile(`\d{17,19}`)
+
 const BOT_ABOUT_INFO = `
 '''prolog
 Text Response Automation System

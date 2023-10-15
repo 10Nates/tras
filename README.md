@@ -114,7 +114,7 @@ __LIST OF COMMANDS__
 > Admins get other commands as well. Dice rolling disabled by default.
 > 
 > Format: `@TRAS rank [info/checkDice/dice] [(info)-real]`
-> Format (admin): `@TRAS rank [set/reset/toggleDice] [(set/reset)user] [amount]`
+> Format (admin): `@TRAS rank [set/reset/toggleDice] [(set/reset)user] [value]`
  
 ### `@TRAS set nickname`
 > Set the bot's Nickname on the server. Reset with "{RESET}". 

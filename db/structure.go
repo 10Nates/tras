@@ -26,6 +26,7 @@ type RankMember struct {
 type DivisionData struct {
 	Div           Division `pg:",pk"`
 	RandSpeak     bool
+	Dice          bool
 	LastRandSpeak time.Time // used to manage randSpeak interval
 	Cmds          []*CustomCommand
 	RankMems      []*RankMember

@@ -292,11 +292,11 @@ func helpResponse(msg *disgord.Message, s *disgord.Session, h *disgord.Interacti
 		Description: "**------------------------**\n",
 		Fields: []*disgord.EmbedField{
 			{
-				Name:  "_ _\n@TRAS help",
+				Name:  "_ _\n@TRAS help OR /help",
 				Value: "Summons this help list.",
 			},
 			{
-				Name:  "_ _\n@TRAS about",
+				Name:  "_ _\n@TRAS about OR /about",
 				Value: "Gives information about the bot. Add \"NoCB\" for devices that don't support links with command blocks.",
 			},
 		},

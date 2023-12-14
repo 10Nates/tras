@@ -4,7 +4,7 @@ import "regexp"
 
 // put all the stuff that should remain in memory in one place
 
-const BOT_VERSION = "3.0.0"
+const BOT_VERSION = "3.0.1"
 
 const BOT_AUTHOR_ID = "186507006008360960"
 
@@ -30,7 +30,7 @@ const BOT_ABOUT_INFO = `
 '''prolog
 Text Response Automation System
 ''''''md
-<Version 3.0.0>
+<Version 3.0.1>
 <Created_by Nathan Hedge>
 ''''''py
 #################''''''md

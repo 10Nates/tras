@@ -429,10 +429,10 @@ func helpResponse(msg *disgord.Message, s *disgord.Session, h *disgord.Interacti
 	baseReply(msg, s, helpCommandResponses[GRand.Intn(len(helpCommandResponses))]) // random help command response
 
 	if h != nil {
-		baseEmbedDMReply(msg, s, []*disgord.Embed{eFirst, eSecond, eThird, eFourth}, "Your DMs are not open! Feel free to check out the commmands on https://tras.almostd.one.", h)
+		baseEmbedDMReply(msg, s, []*disgord.Embed{eFirst, eSecond, eThird, eFourth}, "Something went wrong. Feel free to check out the commmands on https://tras.almostd.one.", h)
 		return
 	}
-	baseEmbedDMReply(msg, s, []*disgord.Embed{eFirst}, "Your DMs are not open! Feel free to check out the commmands on https://tras.almostd.one.", h)
+	baseEmbedDMReply(msg, s, []*disgord.Embed{eFirst}, "Your DMs are not open! You can use the slash command instead.", h)
 	baseEmbedDMReply(msg, s, []*disgord.Embed{eSecond}, "", h)
 	baseEmbedDMReply(msg, s, []*disgord.Embed{eThird}, "", h)
 	baseEmbedDMReply(msg, s, []*disgord.Embed{eFourth}, "", h)
@@ -459,7 +459,7 @@ func aboutResponse(msg *disgord.Message, s *disgord.Session, nocb bool, h *disgo
 	}
 
 	baseReact(msg, s, "👍")
-	baseEmbedDMReply(msg, s, []*disgord.Embed{embed}, "Your DMs are not open! Feel free to find the information on https://tras.almostd.one.", h)
+	baseEmbedDMReply(msg, s, []*disgord.Embed{embed}, "Your DMs are not open! You can use the slash command instead.", h)
 }
 
 func piResponse(msg *disgord.Message, s *disgord.Session) {

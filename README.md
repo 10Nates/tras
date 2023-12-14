@@ -1,5 +1,5 @@
 # Text Response Automation System
-```                                     
+```
   _|_|_|_|_|  _|_|_|_|       _|       _|_|_|_|
  /////_|///  /_|////_|      _|_|     _|////// 
      /_|     /_|   /_|     _|//_|   /_|       
@@ -7,7 +7,7 @@
      /_|     /_|///_|    _|_|_|_|_| ////////_|
      /_|     /_|  //_|  /_|//////_|        /_|
      /_|     /_|   //_| /_|     /_|  _|_|_|_| 
-     //      //     //  //      //  ////////                                          
+     //      //     //  //      //  ////////
 ```
 ----------------------------------
 
@@ -46,7 +46,7 @@ __LIST OF COMMANDS__
 
 ### `@TRAS big`
 > Make a larger verison of word/text made of the letter. 
-> Starts getting wonky with emojis. Becomes file over 520 characters. 
+> Starts getting wonky with emojis. Becomes file over 400 characters. 
 > You can enable thin letters with -t or --thin.
 > 
 > Format: `@TRAS big (-t/--thin) [letter] [text]`
@@ -98,13 +98,14 @@ __LIST OF COMMANDS__
 > Format: `@TRAS word info [definition/pos] [word]`
  
 ### `@TRAS ascii art`
-> Generate ascii art. Over 15 characters responds with a file.
+> Generate ascii art. Over 400 characters returns in a file.
 > 
-> Format: `@TRAS ascii art [text/{font:[Font (use "\ " as space)]}/{getFonts}] [(font)text]`
+> Format: `@TRAS ascii art [font/getFonts] [text]`
  
 ### `@TRAS commands`
-> View and manage custom server commands, managing requires "Manage Messages" perms.
-> Custom commands feature requires TRAS Deluxe TBD.
+> View and manage custom server commands, managing requires administrator perms.
+> Custom commands feature may require TRAS Deluxe in the future (TBD, currently not a thing).
+> Schedule feature not currently implemented.
 > 
 > Format: `@TRAS commands [manage/view] [(manage)...]`
 > Format (manage): `@TRAS commands manage [set/delete/schedule] [(set/delete)trigger//(schedule)time of day (hh:mm:ss)] [(set/schedule)reply]`
@@ -113,7 +114,8 @@ __LIST OF COMMANDS__
 > Shows your rank, lets your reset your rank, and allows you to roll dice for a new rank if it's enabled. 
 > Admins get other commands as well. Dice rolling disabled by default.
 > 
-> Format: `@TRAS rank [info/checkDice/dice/reset] [user(4resetORset,admin)/amount(4set,admin)/-real(4info)] [amount(4set,admin)]`
+> Format: `@TRAS rank [info/checkDice/dice] [(info)-real]`
+> Format (admin): `@TRAS rank [set/reset/toggleDice] [(set/reset)user] [value]`
  
 ### `@TRAS set nickname`
 > Set the bot's Nickname on the server. Reset with "{RESET}". 
@@ -125,8 +127,9 @@ __LIST OF COMMANDS__
 ### `@TRAS speak`
 > Generate a sentence, plus toggle and get the status of random generated messages. 
 > Toggling requires "Manage Messages" permissions. Random messages are off by default.
+> Frequent generation may require TRAS Deluxe in the future (TBD, currently not a thing).
 > 
-> Format: `@TRAS speak [generate/randomspeak] [(randomspeak)on/off/status//(generate)starter]`
+> Format: `@TRAS speak [generate/randomspeak] [(randomspeak)on/off/status]`
  
 ### `@TRAS combinations`
 > Sends file with all possible combinations of the units you have selected and given.
@@ -141,8 +144,8 @@ __LIST OF COMMANDS__
 > Responds "What's up?"
  
 ### Generated messages
-> Fully generated messages *(not an AI so they're completely nonsensical)* can be toggled as the fallback instead of the default response.
-> Feature was degraded from its former glory by changes to the Discord API.
+> Fully generated messages *(not an AI so they're completely nonsensical)* can be toggled to randomly
+> say them in response to  user messages. Random messages will not reply to commands.
 > Toggle random messages with `@TRAS speak randomspeak [on/off]`
 
 <br>
@@ -162,7 +165,7 @@ __GENERAL DETAILS__
 
 > ALL commands (except for some modifiers) work with aNY CapItaLIzATIoN.
 
-> All commands work in DMs. (There are some exeptions due to Discord's limits, or having no purpose)
+> All commands should work in DMs.
 
 > Ranking levels are base 2 logirithms of your progress.
 
@@ -175,4 +178,9 @@ __GENERAL DETAILS__
 <br>
 <br>
 
-## Copyright (c) 2022 Nathan B. (10Nates)
+![TRAS logo](src/traslogo.png)
+
+<br>
+<br>
+
+## Copyright (c) 2023 Nathan B. (10Nates)

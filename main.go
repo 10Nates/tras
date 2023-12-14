@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"db"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,10 +18,10 @@ import (
 
 var BotID string // loaded on init
 var BotPFP string
-var BotClient *disgord.Client
 var BigTypeLetters map[string]map[string]string // this is way easier than the alternative
 var ThesaurusLookup map[string][]string
 var GRand = rand.New(rand.NewSource(time.Now().UnixNano()))
+var DBConn *db.Connection
 
 func main() {
 	// load bigtype letters
@@ -41,6 +44,19 @@ func main() {
 		panic(err)
 	}
 
+	// connect to DB
+	DBConn = &db.Connection{
+		Host:     DB_HOST,
+		Port:     DB_PORT,
+		Password: os.Getenv("DB_PASSWORD"),
+		DBName:   DB_NAME,
+	}
+	err = DBConn.Connect()
+	if err != nil {
+		panic(err)
+	}
+	DBConn.CloseOnInterrupt()
+
 	//load client
 	client := disgord.New(disgord.Config{
 		BotToken: os.Getenv("Token"),
@@ -48,8 +64,6 @@ func main() {
 			disgord.IntentGuildMessageReactions | disgord.IntentDirectMessageReactions,
 	})
 	defer client.Gateway().StayConnectedUntilInterrupted()
-
-	BotClient = client
 
 	//startup message
 	client.Gateway().BotReady(func() {
@@ -78,7 +92,20 @@ func main() {
 	client.Gateway().
 		WithMiddleware(content.NotByBot, content.NotByWebhook, content.ContainsBotMention, content.HasBotMentionPrefix). // filter
 		MessageCreate(func(s disgord.Session, evt *disgord.MessageCreate) {                                              // on message
+			// used for standard message parsing
 			go parseCommand(evt.Message, &s)
+		})
+
+	client.Gateway().
+		WithMiddleware(content.NotByBot, content.NotByWebhook).
+		MessageCreate(func(s disgord.Session, evt *disgord.MessageCreate) { // on message (any)
+			if content.ContainsBotMention(evt) != nil { // middleware !content.ContainsBotMention
+				return
+			}
+			// used for ranking and randomspeak
+
+			updateMemberProgress(evt.Message)
+			executeRandSpeakRoll(evt.Message, &s)
 		})
 }
 
@@ -93,17 +120,19 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 	args := []string{}
 	argsl := []string{}
 
-	for i := 0; i < len(carr); i++ {
-		if !strings.Contains(carr[i], BotID) { // ignore where bot is mentioned
-			args = append(args, carr[i])
-			argsl = append(argsl, strings.ToLower(carr[i]))
-		}
+	for i := 1; i < len(carr); i++ { // first argument should always be bot mention
+		args = append(args, carr[i])
+		argsl = append(argsl, strings.ToLower(carr[i]))
 	}
 
 	if len(args) < 1 { // prevent error in switch case
 		args = append(args, "")
 		argsl = append(argsl, "")
 	}
+
+	// custom commands never override standard
+	// commands to prevent deadlock
+	successful_cc := parseCustomCommand(msg, s, argsl[0])
 
 	switch argsl[0] {
 	case "help":
@@ -214,47 +243,280 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 					}
 
 				} else {
-					baseReply(msg, s, "What word do you want info on?")
+					baseReply(msg, s, "What word do you want info on?\nIf you said a word, you may not have specified definition/pos BEFORE The word.")
 				}
 			} else {
 				baseReply(msg, s, "What type of info do you want? Defintion, or categories?")
 			}
 		} else {
-			defaultResponse(msg, s)
+			defaultResponse(msg, s, successful_cc)
 		}
 	case "ascii":
 		if len(argsl) > 1 && argsl[1] == "art" {
-
+			if len(argsl) > 2 {
+				if argsl[2] == "getfonts" {
+					asciiGetFonts(msg, s)
+				} else {
+					if len(argsl) > 3 {
+						text := strings.Join(args[3:], " ")
+						asciiResponse(msg, s, args[2], text, 100) // max width 100, maybe add option in future
+					} else {
+						baseReply(msg, s, "What text do you want to be generated?")
+					}
+				}
+			} else {
+				baseReply(msg, s, "I need to know the [font] and the [text] you want me to use.")
+			}
 		} else {
-			defaultResponse(msg, s)
+			defaultResponse(msg, s, successful_cc)
 		}
 	case "commands", "cmds":
-		defaultTODOResponse(msg, s) // TODO: commands
+		if len(argsl) > 1 && (argsl[1] == "view" || argsl[1] == "list") {
+			handleViewCustomCommands(msg, s)
+		} else if len(argsl) > 1 && argsl[1] == "manage" {
+			// check for permissions
+			perms, err := getPerms(msg, s)
+			if err != nil {
+				msgerr(err, msg, s)
+				return
+			}
+			if !hasPerm(perms, disgord.PermissionAdministrator) {
+				baseReply(msg, s, "You don't have administrator permission. Sorry!")
+				return
+			}
+
+			// restricted cases
+			word := ""
+			if len(argsl) > 2 {
+				word = argsl[2]
+			}
+			switch word {
+			case "set":
+				if len(argsl) > 4 {
+					text := strings.Join(args[4:], " ")
+					handleSetCustomCommand(msg, s, argsl[3], text)
+				} else {
+					baseReply(msg, s, "You need to tell me the [trigger] and [what I should respond with].")
+				}
+			case "delete", "del", "remove", "rem", "reset":
+				if len(argsl) > 3 {
+					handleDeleteCustomCommand(msg, s, argsl[3])
+				} else {
+					baseReply(msg, s, "You need to tell me the [trigger] to delete.")
+				}
+			case "schedule":
+				defaultTODOResponse(msg, s) // TODO: schedule feature
+			default:
+				baseReply(msg, s, "The format for manage is `@TRAS commands manage [set/delete/schedule] [(set/delete)trigger//(schedule)time of day (hh:mm:ss)] [(set/schedule)reply]`")
+			}
+		} else {
+			baseReply(msg, s, "Would you like to [view] the commands, or [manage] them as the admin?")
+		}
 	case "rank":
-		defaultTODOResponse(msg, s) // TODO: ranks
+		if len(argsl) > 1 {
+			switch argsl[1] {
+			case "info":
+				baseReply(msg, s, "TRAS' \"progress\" meter takes various elements of your messages' metadata into account when valuing them.\n"+
+					"This is a differnet approach than TRAS 2 due to the API changes between the sunset of v2 and the creation of v3.\n"+
+					"Levels are the logarithm of your \"progress\" to base 2, meaning you require 2 times the \"progress\" per level."+
+					"\nI included the \"dice roll\" feature as a fun gimmick to portray my thoughts about levels in general - pointless and silly.")
+			case "checkdice":
+				statusStr := "OFF"
+				status, err := getDiceStatus(msg)
+				if err != nil {
+					msgerr(err, msg, s)
+					return
+				}
+				if status {
+					statusStr = "ON"
+				}
+				baseReply(msg, s, "Dice rolls are currently "+statusStr)
+			case "dice":
+				diceEnabled, err := getDiceStatus(msg)
+				if err != nil {
+					msgerr(err, msg, s)
+					return
+				}
+				if diceEnabled {
+					diceRollResponse(msg, s)
+				} else {
+					baseReply(msg, s, "Sorry, dice rolls are currently disabled.\nAsk an admin to `@TRAS rank toggledice` if you want to play dice on this server.")
+				}
+			case "set", "reset", "toggledice":
+				// check for permissions
+				perms, err := getPerms(msg, s)
+				if err != nil {
+					msgerr(err, msg, s)
+					return
+				}
+				if !hasPerm(perms, disgord.PermissionAdministrator) {
+					baseReply(msg, s, "You don't have administrator permission. Sorry!")
+					return
+				}
+				switch argsl[1] {
+				case "set":
+					if len(argsl) > 3 {
+						user, validMention := extractSnowflake(argsl[2])
+						if !validMention {
+							baseReply(msg, s, "That was not a valid user mention.")
+							return
+						}
+
+						num, err := strconv.Atoi(argsl[3])
+						if err != nil {
+							baseReply(msg, s, "Invalid number!")
+							return
+						}
+
+						err = forceSetUserRank(msg, user, int64(num))
+						if err != nil {
+							msgerr(err, msg, s)
+							return
+						}
+					} else {
+						baseReply(msg, s, "You need to tell me the [user] and the [value] to set the progress to.")
+					}
+				case "reset":
+					if len(argsl) > 2 {
+						user, validMention := extractSnowflake(argsl[2])
+						if !validMention {
+							baseReply(msg, s, "That was not a valid user mention.")
+							return
+						}
+						err := forceSetUserRank(msg, user, 0)
+						if err != nil {
+							msgerr(err, msg, s)
+							return
+						}
+					} else {
+						baseReply(msg, s, "You need to tell me the [user] to reset the progress of.")
+					}
+				case "toggledice":
+					toggleDiceResponse(msg, s)
+				}
+			default:
+				user, validMention := extractSnowflake(argsl[1])
+				if validMention {
+					getUserRankInfo(msg, s, user)
+					return
+				}
+
+				// check for permissions
+				perms, err := getPerms(msg, s)
+				if err != nil {
+					msgerr(err, msg, s)
+					return
+				}
+				helpContent := "The format is `@TRAS rank [info/checkDice/dice] [(info)-real]`"
+				if hasPerm(perms, disgord.PermissionAdministrator) {
+					helpContent += "\nThe format for admin controls is `@TRAS rank [set/reset/toggleDice] [(set/reset)user] [value]`"
+				}
+				baseReply(msg, s, helpContent)
+			}
+		} else {
+			getUserRankInfo(msg, s, msg.Author.ID)
+		}
 	case "set":
 		if len(argsl) > 1 && (argsl[1] == "nickname" || argsl[1] == "nick") {
 			text := strings.Join(args[2:], " ") // case sensitive
 			if len(argsl) > 2 {
-				setNickResponse(text, msg, s)
+				setNickResponse(text, msg, s) // checks permissions internally
 			} else {
 				baseReply(msg, s, "What should by nickname be?")
 			}
 		} else {
-			defaultResponse(msg, s)
+			defaultResponse(msg, s, successful_cc)
 		}
 	case "reset":
 		if len(argsl) > 1 && (argsl[1] == "nickname" || argsl[1] == "nick") {
 			// A more natural way of resetting nickname
-			text := "{RESET}" // case sensitive
-			setNickResponse(text, msg, s)
+			text := "{RESET}"             // case sensitive
+			setNickResponse(text, msg, s) // checks permissions internally
 		} else {
-			defaultResponse(msg, s)
+			defaultResponse(msg, s, successful_cc)
 		}
 	case "speak":
-		defaultTODOResponse(msg, s) // TODO: speak
-	case "combinations", "combos":
-		defaultTODOResponse(msg, s) // TODO: combinations
+		if len(argsl) > 1 && argsl[1] == "generate" {
+			if len(argsl) > 2 {
+				text := strings.Join(args[2:], " ") // case sensitive
+				randSpeakGenerateResponse(msg, s, text)
+			} else {
+				randSpeakGenerateResponse(msg, s, "")
+			}
+		} else if len(argsl) > 1 && argsl[1] == "randomspeak" {
+			if len(argsl) > 2 && (argsl[2] == "on" || argsl[2] == "off") {
+				perms, err := getPerms(msg, s)
+				if err != nil {
+					msgerr(err, msg, s)
+					return
+				}
+
+				if !hasPerm(perms, disgord.PermissionManageMessages) {
+					baseReply(msg, s, "You don't have Manage Messages permissions. Sorry!")
+					return
+				}
+
+				if argsl[2] == "on" {
+					err := DBConn.SetRandomSpeakAvailability(getDivision(msg), true)
+					if err != nil {
+						msgerr(err, msg, s)
+						return
+					}
+					baseReply(msg, s, "Randomspeak has been enabled.")
+
+				} else if argsl[2] == "off" {
+					err := DBConn.SetRandomSpeakAvailability(getDivision(msg), false)
+					if err != nil {
+						msgerr(err, msg, s)
+						return
+					}
+					baseReply(msg, s, "Randomspeak has been disabled.")
+
+				} else {
+					err := errors.New("cosmic bit flip (speak randomspeak on/off)")
+					msgerr(err, msg, s)
+					return
+				}
+
+			} else if len(argsl) > 2 && args[2] == "status" {
+				statusStr := "OFF"
+				data, err := getRandSpeakInfo(msg)
+				if err != nil {
+					msgerr(err, msg, s)
+					return
+				}
+				if data.status {
+					statusStr = "ON"
+				}
+				baseReply(msg, s, "Randspeak is currently "+statusStr)
+
+			} else {
+				baseReply(msg, s, "Would you like to check the [status] or turn it [on] or [off]?")
+			}
+		} else {
+			baseReply(msg, s, "Would you like to [generate] a phrase or manage [randomspeak]?")
+		}
+	case "combinations", "combos", "powerset":
+		if len(argsl) > 1 { // option
+			if len(argsl) > 2 { // text
+				switch argsl[1] {
+				case "words", "w":
+					combosResponse(args[2:], msg, s)
+
+				case "characters", "chars", "c":
+					text := strings.Join(args[2:], " ")
+					ltrs := strings.Split(text, "")
+
+					combosResponse(ltrs, msg, s)
+				default:
+					baseReply(msg, s, "That's not an option.")
+				}
+			} else {
+				baseReply(msg, s, "What do you want the combinations for?")
+			}
+		} else {
+			baseReply(msg, s, "Which combinations do you want? Words, or characters?")
+		}
 	case "ping":
 		if len(argsl) > 1 && (argsl[1] == "info" || argsl[1] == "information") {
 			pingResponse(true, msg, s, procTimeStart)
@@ -262,6 +524,6 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 			pingResponse(false, msg, s, procTimeStart)
 		}
 	default:
-		defaultResponse(msg, s)
+		defaultResponse(msg, s, successful_cc)
 	}
 }

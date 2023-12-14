@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"discordless"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,32 +10,37 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
+	"db"
+
 	"github.com/andersfylling/disgord"
+	"github.com/lukesampson/figlet/figletlib"
 )
 
 // This file implements all the functions that directly reply to the commands
 
 // helpers
 
-func getDivision(msg *disgord.Message) Division {
+func getDivision(msg *disgord.Message) db.Division {
 	if msg.GuildID != 0 {
-		return NewDivision('G', msg.GuildID)
+		return db.NewDivision('G', msg.GuildID)
 	}
 	// if it is not a guild, use the author's ID as the ID
 	if msg.Author.ID != 0 {
-		return NewDivision('U', msg.Author.ID)
+		return db.NewDivision('U', msg.Author.ID)
 	}
-	return NewDivision('T', 0) // test/temporary, discard
+	return db.NewDivision('H', 0) // headless
 }
 
-func getPerms(msg *disgord.Message) (disgord.PermissionBit, error) {
+func getPerms(msg *disgord.Message, s *disgord.Session) (disgord.PermissionBit, error) {
 	if msg.GuildID == 0 { // DMs
 		return disgord.PermissionBit(math.MaxUint64), nil // every permission feasible
 	}
-	bit, err := BotClient.Guild(msg.GuildID).Member(msg.Author.ID).GetPermissions()
+	bit, err := (*s).Guild(msg.GuildID).Member(msg.Author.ID).GetPermissions()
 	if err != nil {
 		return 0, err
 	}
@@ -46,28 +52,20 @@ func hasPerm(bit disgord.PermissionBit, perm disgord.PermissionBit) bool {
 	return bit.Contains(perm) || bit.Contains(disgord.PermissionAdministrator) || bit.Contains(disgord.PermissionAll)
 }
 
-type WikiRes struct {
-	BatchComplete bool `json:"batchcomplete"`
-	Query         struct {
-		Pages []struct {
-			PageID     int    `json:"pageid"`
-			Ns         int    `json:"ns"`
-			Title      string `json:"title"`
-			Missing    bool   `json:"missing"`
-			Categories []struct {
-				Ns    int    `json:"ns"`
-				Title string `json:"title"`
-			} `json:"categories"`
-			Extract string `json:"extract"`
-		} `json:"pages"`
-	} `json:"query"`
+type WikiRes struct { // for parsing Wiktionary response
+	En []struct {
+		PartOfSpeech string `json:"partOfSpeech"`
+		Definitions  []struct {
+			Definition string `json:"definition"`
+		} `json:"definitions"`
+	} `json:"en"`
 }
 
 func queryWiktionary(word string) (*WikiRes, error) {
 	// query
 	fmted := strings.ReplaceAll(word, " ", "_")
 	fmted = url.QueryEscape(fmted)
-	url := "https://simple.wiktionary.org/w/api.php?action=query&format=json&prop=categories%7Cextracts&titles=" + fmted + "&formatversion=2&explaintext=1"
+	url := "https://en.wiktionary.org/api/rest_v1/page/definition/" + fmted
 	res, err := http.Get(url)
 
 	// handle
@@ -94,19 +92,45 @@ func queryWiktionary(word string) (*WikiRes, error) {
 	return &resp, nil
 }
 
+func logmsgerr(msg *disgord.Message, err error) {
+	// Error handling message
+	// Author: XXXXXX#XXXX (XXXXX)
+	// Content: "<@462051981863682048> XXXXXXXXX"
+	// Error: XXXXXXX
+	fmt.Fprintf(os.Stderr, "\033[31mError handling message\nAuthor: %s (%d)\nContent: \"%s\"\nError: %s\033[0m\n",
+		msg.Author.Tag(), msg.Author.ID, msg.Content, err)
+}
+
+func extractSnowflake(userMention string) (disgord.Snowflake, bool) { // id, isValid
+	potentialID := userNumsRegex.FindString(userMention)
+	snow, err := disgord.GetSnowflake(potentialID)
+	if err != nil {
+		return 0, false
+	}
+	return snow, true // Doesn't validate if the user exists, only validates if it is a valid number that can be converted to a snowflake.
+}
+
 // templates
 
 func msgerr(err error, msg *disgord.Message, s *disgord.Session) {
 	if err != nil {
-		msg.Reply(context.Background(), *s, "An error occured. Please report this as a bug.```prolog\n"+err.Error()+"```")
-		fmt.Printf("\033[31mError handling message\nAuthor: %s (%d)\nContent: \"%s\"\nError: ", msg.Author.Tag(), msg.Author.ID, msg.Content)
-		fmt.Println(err, "\033[0m")
+		if s == nil { // in case of headless message
+			discordless.HeadlessReply("An error occurred. Please report this as a bug.```prolog\n"+err.Error()+"```", msg.Author.Email)
+		} else {
+			msg.Reply(context.Background(), *s, "An error occurred. Please report this as a bug.```prolog\n"+err.Error()+"```")
+		}
+		logmsgerr(msg, err)
 	} else {
 		fmt.Printf("Responded to \"%s\" from %d\n", msg.Content, msg.Author.ID) // logging
 	}
 }
 
 func baseReply(msg *disgord.Message, s *disgord.Session, reply string) {
+	if s == nil { // for testing, will never happen in the wild
+		discordless.HeadlessReply(reply, msg.Author.Email)
+		return
+	}
+
 	_, err := msg.Reply(context.Background(), *s, disgord.Message{
 		Content: reply,
 		MessageReference: &disgord.MessageReference{ // "reply" client feature
@@ -118,7 +142,31 @@ func baseReply(msg *disgord.Message, s *disgord.Session, reply string) {
 	msgerr(err, msg, s)
 }
 
+func baseDMReply(msg *disgord.Message, s *disgord.Session, reply string) {
+	if s == nil { // for testing, will never happen in the wild
+		discordless.HeadlessReply(reply, msg.Author.Email)
+		return
+	}
+
+	_, _, err := msg.Author.SendMsg(context.Background(), *s, &disgord.Message{
+		Content: reply,
+	})
+	if err != nil {
+		msgerr(err, msg, s)
+	}
+	// note - does not have standard logging when successful as it is often used for spammmy stuff
+}
+
 func baseEmbedReply(msg *disgord.Message, s *disgord.Session, embed *disgord.Embed) {
+	if s == nil { // for testing, will never happen in the wild
+		resp, err := json.MarshalIndent(embed, "", "  ")
+		if err != nil {
+			fmt.Println(err)
+		}
+		discordless.HeadlessReply(string(resp), msg.Author.Email)
+		return
+	}
+
 	_, err := msg.Reply(context.Background(), *s, disgord.Message{
 		Embeds: []*disgord.Embed{embed},
 		MessageReference: &disgord.MessageReference{ // "reply" client feature
@@ -131,15 +179,30 @@ func baseEmbedReply(msg *disgord.Message, s *disgord.Session, embed *disgord.Emb
 }
 
 func baseEmbedDMReply(msg *disgord.Message, s *disgord.Session, embed *disgord.Embed, errorMessage string) {
+	if s == nil { // for testing, will never happen in the wild
+		resp, err := json.MarshalIndent(embed, "", "  ")
+		if err != nil {
+			fmt.Println(err)
+		}
+		discordless.HeadlessReply(string(resp), msg.Author.Email)
+		return
+	}
+
 	_, _, err := msg.Author.SendMsg(context.Background(), *s, &disgord.Message{ // DM feature
 		Embeds: []*disgord.Embed{embed},
 	})
 	if err != nil && errorMessage != "" { // typical error is user having DMs disabled
 		baseReply(msg, s, errorMessage) // this covers network errors because it also handles errors
 	}
+	// note - does not have standard logging when successful as it is often used for spammmy stuff
 }
 
 func baseTextFileReply(msg *disgord.Message, s *disgord.Session, content string, fileName string, fileContents string) {
+	if s == nil { // for testing, will never happen in the wild
+		discordless.HeadlessReply("(file) "+fileName+" - \n"+content, msg.Author.Email)
+		return
+	}
+
 	_, err := msg.Reply(context.Background(), *s, disgord.CreateMessage{
 		Content: content,
 		Files: []disgord.CreateMessageFile{
@@ -149,6 +212,17 @@ func baseTextFileReply(msg *disgord.Message, s *disgord.Session, content string,
 			},
 		},
 	})
+
+	msgerr(err, msg, s)
+}
+
+func baseReact(msg *disgord.Message, s *disgord.Session, emoji interface{}) {
+	if s == nil { // for testing, will never happen in the wild
+		discordless.HeadlessReact(emoji, msg.Author.Email)
+		return
+	}
+
+	err := msg.React(context.Background(), *s, emoji)
 	msgerr(err, msg, s)
 }
 
@@ -157,10 +231,16 @@ func baseTextFileReply(msg *disgord.Message, s *disgord.Session, content string,
 // simple response
 
 func defaultTODOResponse(msg *disgord.Message, s *disgord.Session) {
+	// msgerr(errors.New("TODO"), msg, s)
 	baseReply(msg, s, "This feature is incomplete. Don't worry, it's coming!")
 }
 
-func defaultResponse(msg *disgord.Message, s *disgord.Session) {
+func defaultResponse(msg *disgord.Message, s *disgord.Session, successfulCustomCommand bool) {
+	if successfulCustomCommand {
+		// doesn't do a default response if there was a custom command
+		// Included at this layer so I don't forget in main
+		return
+	}
 	baseReply(msg, s, defaultResponses[GRand.Intn(len(defaultResponses))])
 }
 
@@ -203,7 +283,7 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 			},
 			{
 				Name:  "_ _\n@TRAS big",
-				Value: "Make a larger version of word/text made of the word. Starts getting wonky with emojis. Becomes file over 520 characters. You can enable thin letters with -t or --thin.\n*Format: @TRAS big (-t/--thin) [letter] [text]*",
+				Value: "Make a larger version of word/text made of the word. Starts getting wonky with emojis. Becomes file over 400 characters. You can enable thin letters with -t or --thin.\n*Format: @TRAS big (-t/--thin) [letter] [text]*",
 			},
 			{
 				Name:  "_ _\n@TRAS jumble",
@@ -243,15 +323,15 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 			},
 			{
 				Name:  "_ _\n@TRAS ascii art",
-				Value: "Generate ascii art. Over 15 characters responds with a file.\n*Format: @TRAS ascii art [text/{font:[Font (use \"\\ \" as space)]}/{getFonts}] [(font)text]*",
+				Value: "Generate ascii art. Becomes file over 400 characters.\n*Format: @TRAS ascii art [font/getFonts] [text]*",
 			},
 			{
 				Name:  "_ _\n@TRAS commands",
-				Value: "View and manage custom server commands, managing requires 'Manage Messages' perms. Scheduled commands feature requires TRAS Deluxe TBD.\n*Format:@TRAS commands [manage/view] [(manage)...]*\n*Format (manage): @TRAS commands manage [set/delete/schedule] [(set/delete)trigger//(schedule)time of day (hh:mm:ss)] [(set/schedule)reply]*",
+				Value: "View and manage custom server commands, managing requires 'Manage Messages' perms. Custom commands feature may require TRAS Deluxe in the future (TBD, currently not a thing).\n*Format:@TRAS commands [manage/view] [(manage)...]*\n*Format (manage): @TRAS commands manage [set/delete/schedule] [(set/delete)trigger//(schedule)time of day (hh:mm:ss)] [(set/schedule)reply]*",
 			},
 			{
 				Name:  "_ _\n@TRAS rank",
-				Value: "Shows your rank, lets your reset your rank, and allows you to roll dice for a new rank if it's enabled. Admins get other commands as well. Dice rolling disabled by default.\n*Format: @TRAS rank [info|checkDice|dice|set(admin)|reset(part admin)|diceToggle(admin)] [user(4resetORset,admin)|amount(4set,admin)|-real(4info)] [amount(4set,admin)]*",
+				Value: "Shows your rank, lets your reset your rank, and allows you to roll dice for a new rank if it's enabled. Admins get other commands as well. Dice rolling disabled by default.\n*Format: @TRAS rank [info/checkDice/dice] [(info)-real]*\n*Format (admin): @TRAS rank [set/reset/toggleDice] [(set/reset)user] [value]*",
 			},
 			{
 				Name:  "_ _\n@TRAS set nickname",
@@ -259,7 +339,7 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 			},
 			{
 				Name:  "_ _\n@TRAS speak",
-				Value: "Generate a sentence, repeat messages (requires send perms), and toggle and get status of fallback generated messages. Toggling requires 'Manage Messages' perms. Fallback messages off by default.\n*Format: @TRAS speak [generate/randomspeak] [(randomspeak)on/off/status//(generate)starter]*",
+				Value: "Generate a sentence, plus toggle and get the status of random generated messages. Toggling requires 'Manage Messages' perms. Random messages off by default.\n*Format: @TRAS speak [generate/randomspeak] [(randomspeak)on/off/status]*",
 			},
 			{
 				Name:  "_ _\n@TRAS combinations",
@@ -283,7 +363,7 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 			},
 			{
 				Name:  "Generated messages",
-				Value: "Fully generated messages *(not an AI so they're completely nonsensical)* can be toggled as the fallback instead of the default response.",
+				Value: "Fully generated messages *(not an AI so they're completely nonsensical)* can be toggled to randomly say them in response to  user messages.",
 			},
 		},
 	}
@@ -309,7 +389,7 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 
 	// Has to be several messages due to embed size limitations
 	baseReply(msg, s, helpCommandResponses[GRand.Intn(len(helpCommandResponses))]) // random help command response
-	baseEmbedDMReply(msg, s, eFirst, "Your DMs are not open! Feel free to check out the commmands on https://github.com/10Nates/tras.")
+	baseEmbedDMReply(msg, s, eFirst, "Your DMs are not open! Feel free to check out the commmands on https://tras.almostd.one.")
 	baseEmbedDMReply(msg, s, eSecond, "")
 	baseEmbedDMReply(msg, s, eThird, "")
 	baseEmbedDMReply(msg, s, eFourth, "")
@@ -321,7 +401,7 @@ func aboutResponse(msg *disgord.Message, s *disgord.Session, nocb bool) {
 		content = strings.ReplaceAll(content, "```md", "")
 		content = strings.ReplaceAll(content, "```prolog", "")
 		content = strings.ReplaceAll(content, "```py", "")
-		content = strings.ReplaceAll(content, "```", "")
+		content = strings.ReplaceAll(content, "`", "")
 	}
 	embed := &disgord.Embed{
 		Color: 0x0096ff,
@@ -330,16 +410,13 @@ func aboutResponse(msg *disgord.Message, s *disgord.Session, nocb bool) {
 			IconURL: BotPFP,
 		},
 		Description: content,
-		Thumbnail: &disgord.EmbedThumbnail{
-			URL: "https://github.com/10Nates/src/traslogo.png",
+		Image: &disgord.EmbedImage{
+			URL: "https://github.com/10Nates/tras/raw/main/src/traslogo.png",
 		},
 	}
 
-	err := msg.React(context.Background(), *s, "👍")
-	if err != nil {
-		println(err.Error())
-	}
-	baseEmbedDMReply(msg, s, embed, "Your DMs are not open! Feel free to find the information on https://github.com/10Nates/tras.")
+	baseReact(msg, s, "👍")
+	baseEmbedDMReply(msg, s, embed, "Your DMs are not open! Feel free to find the information on https://tras.almostd.one.")
 }
 
 func piResponse(msg *disgord.Message, s *disgord.Session) {
@@ -361,7 +438,14 @@ func pingResponse(info bool, msg *disgord.Message, s *disgord.Session, procTimeS
 		return
 	}
 
-	hbTime, err := BotClient.AvgHeartbeatLatency()
+	if s == nil {
+		// Headless mode leaks into this function since there's no good way to
+		// Implement updated respones and such
+		baseReply(msg, s, "Ping info is unavailable for headless commands")
+		return
+	}
+
+	hbTime, err := (*s).AvgHeartbeatLatency()
 	if err != nil {
 		msgerr(err, msg, s)
 		return
@@ -381,10 +465,52 @@ func pingResponse(info bool, msg *disgord.Message, s *disgord.Session, procTimeS
 		"`Response Latency:  " + m.Timestamp.Sub(msg.Timestamp.Time).String() + "`\n" +
 		"*Response Latency is response msg date - initial msg date*"
 
-	_, err = BotClient.Channel(msg.ChannelID).Message(m.ID).Update(&disgord.UpdateMessage{ // edit message
+	_, err = (*s).Channel(msg.ChannelID).Message(m.ID).Update(&disgord.UpdateMessage{ // edit message
 		Content: &resp,
 	})
 	msgerr(err, msg, s)
+}
+
+func asciiGetFonts(msg *disgord.Message, s *disgord.Session) {
+	names, err := figletlib.FontNamesInDir(FIGFONT_DIR)
+	if err != nil {
+		msgerr(err, msg, s)
+		return
+	}
+
+	respArr := []string{"**__Font List:__** \n"}
+	c := 0
+
+	for i := 0; i < len(names); i++ {
+		if len(respArr[c]+", "+names[i]) > 2000 { // if too large to fit in single message
+			c++
+			respArr = append(respArr, names[i]) // expand array
+		} else {
+			respArr[c] += names[i] + ", "
+		}
+	}
+
+	baseReact(msg, s, "👍")
+	for _, v := range respArr {
+		v = strings.TrimSuffix(v, ", ")
+		baseDMReply(msg, s, v)
+	}
+}
+
+func getUserRankInfo(msg *disgord.Message, s *disgord.Session, user disgord.Snowflake) {
+	rankMem, err := DBConn.GetRankMember(user, getDivision(msg))
+	if err != nil {
+		msgerr(err, msg, s)
+		return
+	}
+	level := int(math.Log2(float64(rankMem.Progress)))
+	if level == math.MinInt64 {
+		level = 0 // -Inf otherwise
+	}
+	levelStr := strconv.Itoa(level)
+	progStr := strconv.Itoa(int(rankMem.Progress))
+	nextMilestone := strconv.Itoa(int(math.Pow(float64(level+1), 2)))
+	baseReply(msg, s, "Level:"+levelStr+"\n"+"Progress:"+progStr+"/"+nextMilestone)
 }
 
 // simple replace
@@ -531,7 +657,7 @@ func overcompResponse(words []string, msg *disgord.Message, s *disgord.Session) 
 // settings
 
 func setNickResponse(newNick string, msg *disgord.Message, s *disgord.Session) {
-	perms, err := getPerms(msg)
+	perms, err := getPerms(msg, s)
 	if err != nil {
 		msgerr(err, msg, s)
 		return
@@ -552,12 +678,25 @@ func setNickResponse(newNick string, msg *disgord.Message, s *disgord.Session) {
 		newNick = ""
 		re = "re" // tell user the right thing
 	}
-	_, err = BotClient.Guild(msg.GuildID).SetCurrentUserNick(newNick)
+	_, err = (*s).Guild(msg.GuildID).SetCurrentUserNick(newNick)
 	if err != nil {
 		msgerr(err, msg, s)
 		return
 	}
 	baseReply(msg, s, "Nickname "+re+"set!")
+}
+
+func toggleDiceResponse(msg *disgord.Message, s *disgord.Session) {
+	newStatus, err := toggleDiceStatus(msg)
+	if err != nil {
+		msgerr(err, msg, s)
+		return
+	}
+	newStatusStr := "OFF"
+	if newStatus {
+		newStatusStr = "ON"
+	}
+	baseReply(msg, s, "Rank dice are now "+newStatusStr)
 }
 
 // generators
@@ -616,7 +755,7 @@ func bigTypeRespones(word string, text string, thin bool, msg *disgord.Message, 
 	bigString = strings.ReplaceAll(bigString, "_", inchar)
 	bigString = strings.ReplaceAll(bigString, "c", word)
 
-	if len(bigString) > 400 {
+	if len(bigString) > 400 { // arbitrary number from trial and error
 		baseTextFileReply(msg, s, "The result is over 400 characters, so I made it a file.", "big.txt", bigString)
 	} else {
 		baseReply(msg, s, "```\n"+bigString+"\n```")
@@ -629,50 +768,109 @@ func wordInfoReply(info string, word string, msg *disgord.Message, s *disgord.Se
 		msgerr(err, msg, s)
 		return
 	}
-	q := res.Query.Pages[0]
-
-	if q.Missing {
-		baseReply(msg, s, "This word is not available on Wiktionary. Are you sure this is a real English word?\n\n*Note: This is case sensitive**")
-		return
-	}
+	q := res.En
 
 	if info == "def" {
 		// format
-		extract := q.Extract
-		extract = strings.ReplaceAll(extract, "\\n", "\n")
-		extract = strings.ReplaceAll(extract, "== ", "**__")
-		extract = strings.ReplaceAll(extract, " ==", "__**")
-		sections := strings.Split(extract, "\n\n")
-
-		// hyphens for subsections
-		for i, v := range sections {
-			section := strings.Split(v, "\n")
-			if len(section) > 2 {
-				for i2, v2 := range section[3:] {
-					section[i2+3] = "- " + v2
+		parts := map[string]string{}
+		for _, v := range q {
+			_, exists := parts[v.PartOfSpeech]
+			if !exists { // only displays the first etymology, unless the second etymology has other parts of speech
+				for i2, v2 := range v.Definitions {
+					// 								numbered list 					remove html tags
+					parts[v.PartOfSpeech] += "\n" + strconv.Itoa(i2+1) + ". " + htmlTagsRegex.ReplaceAllString(v2.Definition, "")
 				}
 			}
-			sections[i] = strings.Join(section, "\n")
+		}
+
+		resp := ""
+		for k, v := range parts {
+			resp += "**_" + k + "_**" + v + "\n\n"
 		}
 
 		// reply
-		extfmted := strings.Join(sections[1:], "\n")
-		baseReply(msg, s, extfmted)
+		baseReply(msg, s, resp)
 
 	} else if info == "cat" {
 		// format
-		var categories []string
-		for _, v := range q.Categories {
-			categories = append(categories, strings.Replace(v.Title, "Category:", "", 1))
+		parts := map[string]bool{} // only one instance of each part of speech (possible duplicates in original)
+		for _, v := range q {
+			parts[v.PartOfSpeech] = true
 		}
 
-		// reply
-		catfmtd := "\n**__Categories__**\n- " + strings.Join(categories, "\n- ")
-		catfmtd += "\n\n*Note: all Wiktionary categories, not just parts of speech*"
+		keys := make([]string, 0, len(parts))
+		for k := range parts {
+			keys = append(keys, k)
+		}
 
-		baseReply(msg, s, catfmtd)
+		resp := ""
+		if len(keys) > 1 {
+			resp += "- "
+		}
+
+		resp += strings.Join(keys, "\n- ")
+
+		// reply
+		baseReply(msg, s, resp)
 
 	} else {
 		panic("Internal command incorrectly used")
 	}
+}
+
+func combosResponse(set []string, msg *disgord.Message, s *disgord.Session) {
+	if len(set) > 13 {
+		baseReply(msg, s, "Sorry, this command only works with under 14 items due to processing time.")
+		return
+	}
+
+	// generate powerset https://sevko.io/articles/power-set-algorithms/
+	sets := []string{""}
+
+	for _, element := range set {
+		for i := range sets {
+			if sets[i] == "" {
+				sets = append(sets, element)
+			} else {
+				sets = append(sets, sets[i]+", "+element)
+			}
+		}
+	}
+
+	// slower algorithm: https://stackoverflow.com/questions/45267983/code-to-generate-powerset-in-golang-gives-wrong-result
+
+	// format result
+	resultfmt := ""
+	for _, v := range sets {
+		resultfmt += v + "\n"
+	}
+
+	//return
+	baseTextFileReply(msg, s, "Here's a file of all the combinations.", "combos.txt", resultfmt)
+}
+
+func asciiResponse(msg *disgord.Message, s *disgord.Session, font string, text string, maxwidth int) {
+	figFont, err := figletlib.GetFontByName(FIGFONT_DIR, font)
+	if err != nil {
+		baseReply(msg, s, "I couldn't find that font, sorry. Use `@TRAS ascii art getFonts` for a list.")
+	}
+
+	// generate using figlet go implementation
+	resp := figletlib.SprintMsg(text, figFont, maxwidth, figletlib.Settings{}, "left")
+
+	if len(resp) > 400 {
+		baseTextFileReply(msg, s, "Here is your ascii art, packaged neatly into a file!", "ascii.txt", resp)
+	} else {
+		baseReply(msg, s, "```\n"+resp+"```")
+	}
+}
+
+func randSpeakGenerateResponse(msg *disgord.Message, s *disgord.Session, starter string) {
+	// if starter != "" {
+	// 	defaultTODOResponse(msg, s) // TODO: speak generate with starter
+	// }
+	// Implementation halted until sentence generation method supports starters
+
+	sentence := generateTidiedSentence()
+	baseReply(msg, s, sentence)
 }

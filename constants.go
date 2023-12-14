@@ -35,7 +35,7 @@ Text Response Automation System
 ''''''py
 #################''''''md
 ## Links'''
-'- [Website]('['https://tras.almostd.one/'](https://tras.almostd.one/)')'
+'- '['[Website]'](https://tras.almostd.one/)')
 '- '['[Add Link]'](https://bit.ly/gotras)
 '- '['[Top.gg Page]'](https://top.gg/bot/494273862427738113)
 '- '['[Community]'](https://discord.gg/nMprsNGewJ)

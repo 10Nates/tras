@@ -167,7 +167,7 @@ __GENERAL DETAILS__
 
 > All commands should work in DMs.
 
-> Ranking levels are base 2 logirithms of your progress.
+> Ranking levels are base 2 logarithms of your progress.
 
 > Spaces can be included in individual arguments by using escapes / Ex: `This\ is\ one\ argument, but\ this\ is\ the\ second`
 

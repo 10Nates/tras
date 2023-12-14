@@ -131,18 +131,38 @@ func baseReply(msg *disgord.Message, s *disgord.Session, reply string) {
 		return
 	}
 
+	msgRef := &disgord.MessageReference{ // "reply" client feature
+		MessageID: msg.ID,
+		ChannelID: msg.ChannelID,
+		GuildID:   msg.GuildID,
+	}
+
+	if msg.ID == 0 { // No original message, cancel reply
+		return
+	}
+
 	_, err := msg.Reply(context.Background(), *s, disgord.Message{
-		Content: reply,
-		MessageReference: &disgord.MessageReference{ // "reply" client feature
-			MessageID: msg.ID,
-			ChannelID: msg.ChannelID,
-			GuildID:   msg.GuildID,
-		},
+		Content:          reply,
+		MessageReference: msgRef,
 	})
 	msgerr(err, msg, s)
 }
 
-func baseDMReply(msg *disgord.Message, s *disgord.Session, reply string) {
+func baseDMReply(msg *disgord.Message, s *disgord.Session, reply string, h *disgord.InteractionCreate) {
+	if h != nil {
+		err := (*s).SendInteractionResponse(context.Background(), h, &disgord.CreateInteractionResponse{
+			Type: disgord.InteractionCallbackChannelMessageWithSource,
+			Data: &disgord.CreateInteractionResponseData{
+				Content: reply,
+				Flags:   disgord.MessageFlagEphemeral,
+			},
+		})
+		if err != nil {
+			msgerr(err, msg, s)
+		}
+		return
+	}
+
 	if s == nil { // for testing, will never happen in the wild
 		discordless.HeadlessReply(reply, msg.Author.Email)
 		return
@@ -178,9 +198,23 @@ func baseEmbedReply(msg *disgord.Message, s *disgord.Session, embed *disgord.Emb
 	msgerr(err, msg, s)
 }
 
-func baseEmbedDMReply(msg *disgord.Message, s *disgord.Session, embed *disgord.Embed, errorMessage string) {
+func baseEmbedDMReply(msg *disgord.Message, s *disgord.Session, embeds []*disgord.Embed, errorMessage string, h *disgord.InteractionCreate) {
+	if h != nil {
+		err := (*s).SendInteractionResponse(context.Background(), h, &disgord.CreateInteractionResponse{
+			Type: disgord.InteractionCallbackChannelMessageWithSource,
+			Data: &disgord.CreateInteractionResponseData{
+				Embeds: embeds,
+				Flags:  disgord.MessageFlagEphemeral,
+			},
+		})
+		if err != nil {
+			msgerr(err, msg, s)
+		}
+		return
+	}
+
 	if s == nil { // for testing, will never happen in the wild
-		resp, err := json.MarshalIndent(embed, "", "  ")
+		resp, err := json.MarshalIndent(embeds, "", "  ")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -189,7 +223,7 @@ func baseEmbedDMReply(msg *disgord.Message, s *disgord.Session, embed *disgord.E
 	}
 
 	_, _, err := msg.Author.SendMsg(context.Background(), *s, &disgord.Message{ // DM feature
-		Embeds: []*disgord.Embed{embed},
+		Embeds: embeds,
 	})
 	if err != nil && errorMessage != "" { // typical error is user having DMs disabled
 		baseReply(msg, s, errorMessage) // this covers network errors because it also handles errors
@@ -222,6 +256,10 @@ func baseReact(msg *disgord.Message, s *disgord.Session, emoji interface{}) {
 		return
 	}
 
+	if msg.ID == 0 { // does not exist (slash command), cancel
+		return
+	}
+
 	err := msg.React(context.Background(), *s, emoji)
 	msgerr(err, msg, s)
 }
@@ -244,7 +282,7 @@ func defaultResponse(msg *disgord.Message, s *disgord.Session, successfulCustomC
 	baseReply(msg, s, defaultResponses[GRand.Intn(len(defaultResponses))])
 }
 
-func helpResponse(msg *disgord.Message, s *disgord.Session) {
+func helpResponse(msg *disgord.Message, s *disgord.Session, h *disgord.InteractionCreate) {
 	eFirst := &disgord.Embed{
 		Color: 0x0096ff,
 		Author: &disgord.EmbedAuthor{
@@ -389,13 +427,18 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 
 	// Has to be several messages due to embed size limitations
 	baseReply(msg, s, helpCommandResponses[GRand.Intn(len(helpCommandResponses))]) // random help command response
-	baseEmbedDMReply(msg, s, eFirst, "Your DMs are not open! Feel free to check out the commmands on https://tras.almostd.one.")
-	baseEmbedDMReply(msg, s, eSecond, "")
-	baseEmbedDMReply(msg, s, eThird, "")
-	baseEmbedDMReply(msg, s, eFourth, "")
+
+	if h != nil {
+		baseEmbedDMReply(msg, s, []*disgord.Embed{eFirst, eSecond, eThird, eFourth}, "Your DMs are not open! Feel free to check out the commmands on https://tras.almostd.one.", h)
+		return
+	}
+	baseEmbedDMReply(msg, s, []*disgord.Embed{eFirst}, "Your DMs are not open! Feel free to check out the commmands on https://tras.almostd.one.", h)
+	baseEmbedDMReply(msg, s, []*disgord.Embed{eSecond}, "", h)
+	baseEmbedDMReply(msg, s, []*disgord.Embed{eThird}, "", h)
+	baseEmbedDMReply(msg, s, []*disgord.Embed{eFourth}, "", h)
 }
 
-func aboutResponse(msg *disgord.Message, s *disgord.Session, nocb bool) {
+func aboutResponse(msg *disgord.Message, s *disgord.Session, nocb bool, h *disgord.InteractionCreate) {
 	content := strings.ReplaceAll(BOT_ABOUT_INFO, "'", "`")
 	if nocb {
 		content = strings.ReplaceAll(content, "```md", "")
@@ -416,7 +459,7 @@ func aboutResponse(msg *disgord.Message, s *disgord.Session, nocb bool) {
 	}
 
 	baseReact(msg, s, "👍")
-	baseEmbedDMReply(msg, s, embed, "Your DMs are not open! Feel free to find the information on https://tras.almostd.one.")
+	baseEmbedDMReply(msg, s, []*disgord.Embed{embed}, "Your DMs are not open! Feel free to find the information on https://tras.almostd.one.", h)
 }
 
 func piResponse(msg *disgord.Message, s *disgord.Session) {
@@ -493,7 +536,7 @@ func asciiGetFonts(msg *disgord.Message, s *disgord.Session) {
 	baseReact(msg, s, "👍")
 	for _, v := range respArr {
 		v = strings.TrimSuffix(v, ", ")
-		baseDMReply(msg, s, v)
+		baseDMReply(msg, s, v, nil)
 	}
 }
 

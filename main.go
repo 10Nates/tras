@@ -23,6 +23,22 @@ var ThesaurusLookup map[string][]string
 var GRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 var DBConn *db.Connection
 
+var slashCommands = []*disgord.CreateApplicationCommand{
+	{
+		Name:        "help",
+		Description: "Alternative to @TRAS help, view help command without DMs.",
+	},
+	{
+		Name:        "about",
+		Description: "Alternative to @TRAS about. view about command without a DM.",
+	},
+}
+
+type MessagePassthrough struct {
+	Message     *disgord.Message
+	Interaction *disgord.InteractionCreate
+}
+
 func main() {
 	// load bigtype letters
 	bigtypejson, err := os.ReadFile("src/bigtype.json")
@@ -65,17 +81,27 @@ func main() {
 	})
 	defer client.Gateway().StayConnectedUntilInterrupted()
 
+	var BotUser *disgord.User
+
 	//startup message
 	client.Gateway().BotReady(func() {
-		usr, err := client.CurrentUser().Get()
+		botUser, err := client.CurrentUser().Get()
 		if err != nil {
 			panic(err) // Bot shouldn't start
 		}
-		BotID = usr.ID.String()
-		BotPFP, err = usr.AvatarURL(256, false)
+		BotID = botUser.ID.String()
+		BotPFP, err = botUser.AvatarURL(256, false)
 		if err != nil {
 			panic(err) // Bot shouldn't start
 		}
+
+		for i := range slashCommands {
+			err = client.ApplicationCommand(0).Global().Create(slashCommands[i])
+			if err != nil {
+				panic(err)
+			}
+		}
+
 		fmt.Println("Bot started @ " + time.Now().Local().Format(time.RFC1123))
 		client.UpdateStatusString("@me help")
 	})
@@ -88,12 +114,36 @@ func main() {
 	content.NotByBot(client)
 	content.ContainsBotMention(client)
 
+	//slash command handling
+	client.Gateway().
+		InteractionCreate(func(s disgord.Session, h *disgord.InteractionCreate) {
+			msgConvert := &disgord.Message{
+				ID:              0, // Tag with no original message
+				ChannelID:       h.ChannelID,
+				GuildID:         h.GuildID,
+				Author:          h.Member.User,
+				Member:          h.Member,
+				Content:         "<@" + BotID + "> " + h.Data.Name,
+				Timestamp:       disgord.Time{Time: time.Now()},
+				EditedTimestamp: disgord.Time{Time: time.Now()},
+				Mentions:        []*disgord.User{BotUser},
+				Type:            disgord.MessageTypeApplicationCommand,
+			}
+			parseCommand(MessagePassthrough{
+				Message:     msgConvert,
+				Interaction: h,
+			}, &s)
+			if err != nil {
+				msgerr(err, h.Message, &s)
+			}
+		})
+
 	//on message with mention
 	client.Gateway().
 		WithMiddleware(content.NotByBot, content.NotByWebhook, content.ContainsBotMention, content.HasBotMentionPrefix). // filter
 		MessageCreate(func(s disgord.Session, evt *disgord.MessageCreate) {                                              // on message
 			// used for standard message parsing
-			go parseCommand(evt.Message, &s)
+			go parseCommand(MessagePassthrough{Message: evt.Message}, &s)
 		})
 
 	client.Gateway().
@@ -109,7 +159,9 @@ func main() {
 		})
 }
 
-func parseCommand(msg *disgord.Message, s *disgord.Session) {
+func parseCommand(msgPt MessagePassthrough, s *disgord.Session) {
+	msg := msgPt.Message
+
 	procTimeStart := time.Now() // timer for ping info
 	cstr := msg.Content
 	rsplitstr := argumentSplitRegex.ReplaceAllString(cstr, "$1\n") // separate arguments with "\\" and "\"
@@ -136,12 +188,12 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 
 	switch argsl[0] {
 	case "help":
-		helpResponse(msg, s)
+		helpResponse(msg, s, msgPt.Interaction)
 	case "about":
 		if len(argsl) > 1 && argsl[1] == "nocb" { // remove code blocks so iOS can click the links
-			aboutResponse(msg, s, true)
+			aboutResponse(msg, s, true, msgPt.Interaction)
 		} else {
-			aboutResponse(msg, s, false)
+			aboutResponse(msg, s, false, msgPt.Interaction)
 		}
 	case "oof":
 		// big OOF

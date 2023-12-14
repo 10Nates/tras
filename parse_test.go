@@ -5,13 +5,19 @@ import (
 	"discordless"
 	"fmt"
 	"testing"
+
+	"github.com/andersfylling/disgord"
 )
 
 // passthrough to discordless testing file
 
+func parseCommandPassthrough(msg *disgord.Message, s *disgord.Session) {
+	parseCommand(MessagePassthrough{Message: msg}, s)
+}
+
 func BenchmarkParser(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		discordless.Test(parseCommand)
+		discordless.Test(parseCommandPassthrough)
 	}
 }
 
@@ -31,7 +37,7 @@ func TestParser(t *testing.T) {
 	}
 	DBConn.CloseOnInterrupt()
 
-	res := discordless.Test(parseCommand)
+	res := discordless.Test(parseCommandPassthrough)
 
 	nF := 0
 	for _, v := range res {

@@ -83,7 +83,7 @@ func handleViewCustomCommands(msg *disgord.Message, s *disgord.Session) {
 
 	baseReact(msg, s, "👍")
 	for _, v := range respArr {
-		baseDMReply(msg, s, v)
+		baseDMReply(msg, s, v, nil)
 	}
 }
 

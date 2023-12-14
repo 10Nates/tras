@@ -287,7 +287,7 @@ func executeRandSpeakRoll(msg *disgord.Message, s *disgord.Session) error {
 		return nil
 	}
 
-	probabilityWeight := -math.Pow(math.E, float64(rsdata.LastRandSpeak.Unix())*(-1/60.0)) + 1
+	probabilityWeight := -math.Pow(math.E, float64(time.Now().Unix()-rsdata.LastRandSpeak.Unix())*(-1/60.0)) + 1
 	if GRand.Float64()*25 < probabilityWeight { // max odds 1 in 25, min odds 0 (immediately after last randSpeak)
 		DBConn.SetLastRandomSpeakTime(getDivision(msg), time.Now())
 		randSpeakGenerateResponse(msg, s, "")

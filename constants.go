@@ -33,22 +33,18 @@ Text Response Automation System
 <Version 3.0.0>
 <Created_by Nathan Hedge>
 ''''''py
-#################'''['''md
-[Website](https://tras.almostd.one/)
-'''](https://tras.almostd.one/)['''md
-[Add Link](https://bit.ly/gotras)
-'''](https://bit.ly/gotras)['''md
-[Top.gg Page](https://top.gg/bot/494273862427738113)
-'''](https://top.gg/bot/494273862427738113)['''md
-[Community](https://discord.gg/nMprsNGewJ)
-'''](https://discord.gg/nMprsNGewJ)['''md
-[Git Repo](https://github.com/10Nates/tras)
-'''](https://github.com/10Nates/tras)'''py
-#################'''['''md
-[Legal]()
-[ ](TRAS operates under the MIT license)
-[ ](https://github.com/10Nates/tras/LICENSE)
-'''](https://github.com/10Nates/tras/LICENSE)
+#################''''''md
+## Links'''
+'- [Website]('['https://tras.almostd.one/'](https://tras.almostd.one/)')'
+'- '['[Add Link]'](https://bit.ly/gotras)
+'- '['[Top.gg Page]'](https://top.gg/bot/494273862427738113)
+'- '['[Community]'](https://discord.gg/nMprsNGewJ)
+'- '['[Git Repo]'](https://github.com/10Nates/tras)
+'''py
+#################''''''md
+## Legal
+- TRAS Operates under the MIT License
+- [Available Here](https://github.com/10Nates/tras/LICENSE)'''['[License]'](https://github.com/10Nates/tras/LICENSE)
 `
 
 // various quips to make it friendlier

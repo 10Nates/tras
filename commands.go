@@ -327,11 +327,11 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 			},
 			{
 				Name:  "_ _\n@TRAS commands",
-				Value: "View and manage custom server commands, managing requires 'Manage Messages' perms. Scheduled commands feature requires TRAS Deluxe TBD.\n*Format:@TRAS commands [manage/view] [(manage)...]*\n*Format (manage): @TRAS commands manage [set/delete/schedule] [(set/delete)trigger//(schedule)time of day (hh:mm:ss)] [(set/schedule)reply]*",
+				Value: "View and manage custom server commands, managing requires 'Manage Messages' perms. Custom commands feature may require TRAS Deluxe in the future (TBD, currently not a thing).\n*Format:@TRAS commands [manage/view] [(manage)...]*\n*Format (manage): @TRAS commands manage [set/delete/schedule] [(set/delete)trigger//(schedule)time of day (hh:mm:ss)] [(set/schedule)reply]*",
 			},
 			{
 				Name:  "_ _\n@TRAS rank",
-				Value: "Shows your rank, lets your reset your rank, and allows you to roll dice for a new rank if it's enabled. Admins get other commands as well. Dice rolling disabled by default.\n*Format: @TRAS rank [info|checkDice|dice|set(admin)|reset(part admin)|diceToggle(admin)] [user(4resetORset,admin)|amount(4set,admin)|-real(4info)] [amount(4set,admin)]*",
+				Value: "Shows your rank, lets your reset your rank, and allows you to roll dice for a new rank if it's enabled. Admins get other commands as well. Dice rolling disabled by default.\n*Format: @TRAS rank [info/checkDice/dice] [(info)-real]*\n*Format (admin): @TRAS rank [set/reset/toggleDice] [(set/reset)user] [value]*",
 			},
 			{
 				Name:  "_ _\n@TRAS set nickname",
@@ -339,7 +339,7 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 			},
 			{
 				Name:  "_ _\n@TRAS speak",
-				Value: "Generate a sentence, plus toggle and get the status of random generated messages. Toggling requires 'Manage Messages' perms. Random messages off by default.\n*Format: @TRAS speak [generate/randomspeak] [(randomspeak)on/off/status//(generate)starter]*",
+				Value: "Generate a sentence, plus toggle and get the status of random generated messages. Toggling requires 'Manage Messages' perms. Random messages off by default.\n*Format: @TRAS speak [generate/randomspeak] [(randomspeak)on/off/status]*",
 			},
 			{
 				Name:  "_ _\n@TRAS combinations",
@@ -363,7 +363,7 @@ func helpResponse(msg *disgord.Message, s *disgord.Session) {
 			},
 			{
 				Name:  "Generated messages",
-				Value: "Fully generated messages *(not an AI so they're completely nonsensical)* can be toggled as the fallback instead of the default response.",
+				Value: "Fully generated messages *(not an AI so they're completely nonsensical)* can be toggled to randomly say them in response to  user messages.",
 			},
 		},
 	}
@@ -401,7 +401,7 @@ func aboutResponse(msg *disgord.Message, s *disgord.Session, nocb bool) {
 		content = strings.ReplaceAll(content, "```md", "")
 		content = strings.ReplaceAll(content, "```prolog", "")
 		content = strings.ReplaceAll(content, "```py", "")
-		content = strings.ReplaceAll(content, "```", "")
+		content = strings.ReplaceAll(content, "`", "")
 	}
 	embed := &disgord.Embed{
 		Color: 0x0096ff,
@@ -504,6 +504,9 @@ func getUserRankInfo(msg *disgord.Message, s *disgord.Session, user disgord.Snow
 		return
 	}
 	level := int(math.Log2(float64(rankMem.Progress)))
+	if level == math.MinInt64 {
+		level = 0 // -Inf otherwise
+	}
 	levelStr := strconv.Itoa(level)
 	progStr := strconv.Itoa(int(rankMem.Progress))
 	nextMilestone := strconv.Itoa(int(math.Pow(float64(level+1), 2)))

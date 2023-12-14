@@ -9,7 +9,7 @@ require (
 )
 
 require (
-	github.com/10nates/wordpos v0.0.0-20231213202542-fb313dc8657e
+	github.com/10nates/wordpos v0.0.0-20231214062347-35d49c903c08
 	github.com/stretchr/testify v1.8.4 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/crypto v0.16.0 // indirect

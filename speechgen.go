@@ -263,8 +263,8 @@ func generateTidiedSentence() string {
 	// remove underscores
 	sentence = strings.ReplaceAll(sentence, "_", " ")
 	// capitalize first letter
-	first, after, _ := strings.Cut(sentence, "")
-	first = strings.ToUpper(first)
+	list := strings.SplitAfterN(sentence, "", 2)
+	list[0] = strings.ToUpper(list[0])
 
-	return first + after + "."
+	return list[0] + list[1] + "."
 }

@@ -243,7 +243,7 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 					}
 
 				} else {
-					baseReply(msg, s, "What word do you want info on?")
+					baseReply(msg, s, "What word do you want info on?\nIf you said a word, you may not have specified definition/pos BEFORE The word.")
 				}
 			} else {
 				baseReply(msg, s, "What type of info do you want? Defintion, or categories?")
@@ -523,6 +523,12 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 		} else {
 			pingResponse(false, msg, s, procTimeStart)
 		}
+	case "test":
+		div, err := DBConn.GetRankMember(msg.Author.ID, getDivision(msg))
+		if err != nil {
+			msgerr(err, msg, s)
+		}
+		baseReply(msg, s, strconv.Itoa(int(div.Progress)))
 	default:
 		defaultResponse(msg, s, successful_cc)
 	}

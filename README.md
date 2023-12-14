@@ -11,7 +11,7 @@
 ```
 ----------------------------------
 
-> Version 3.0.0
+> Version 3.0.1
 
 > Made by Nathan Hedge @ https://almostd.one/
 
@@ -28,12 +28,14 @@ This may sound like any other bot at first, but this is **much** more than basic
 
 __LIST OF COMMANDS__
 ---
-### `@TRAS help`
+### `@TRAS help` / `/help`
 > Summons a help list.
+> Slash command doesn't require DMs
  
-### `@TRAS about`
+### `@TRAS about` / `/about`
 > Gives information about the bot. 
 > Add "NoCB" for devices that don't support links with command blocks.
+> Slash command doesn't require DMs
  
 ### `@TRAS oof`
 > Mega OOF
@@ -167,7 +169,7 @@ __GENERAL DETAILS__
 
 > All commands should work in DMs.
 
-> Ranking levels are base 2 logirithms of your progress.
+> Ranking levels are base 2 logarithms of your progress.
 
 > Spaces can be included in individual arguments by using escapes / Ex: `This\ is\ one\ argument, but\ this\ is\ the\ second`
 

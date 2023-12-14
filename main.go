@@ -117,11 +117,15 @@ func main() {
 	//slash command handling
 	client.Gateway().
 		InteractionCreate(func(s disgord.Session, h *disgord.InteractionCreate) {
+			user := h.User
+			if h.Member != nil {
+				user = h.Member.User
+			}
 			msgConvert := &disgord.Message{
 				ID:              0, // Tag with no original message
 				ChannelID:       h.ChannelID,
 				GuildID:         h.GuildID,
-				Author:          h.Member.User,
+				Author:          user,
 				Member:          h.Member,
 				Content:         "<@" + BotID + "> " + h.Data.Name,
 				Timestamp:       disgord.Time{Time: time.Now()},

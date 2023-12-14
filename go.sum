@@ -1,7 +1,3 @@
-github.com/10nates/wordpos v0.0.0-20231213052108-cfd3dbb92d4d h1:WuB29iyTNin73bbCLCDFPcoDdXublB90xIGWck6ZMQw=
-github.com/10nates/wordpos v0.0.0-20231213052108-cfd3dbb92d4d/go.mod h1:kmmvuQkPKgS2zTU5ZoDg01le/swKMgU1QRKPHFGKjL4=
-github.com/10nates/wordpos v0.0.0-20231213202542-fb313dc8657e h1:NmzduyTRVbaqRUzYz/WF0X6l2Zuu+K4iaJIhlOo91Jk=
-github.com/10nates/wordpos v0.0.0-20231213202542-fb313dc8657e/go.mod h1:kmmvuQkPKgS2zTU5ZoDg01le/swKMgU1QRKPHFGKjL4=
 github.com/10nates/wordpos v0.0.0-20231214062347-35d49c903c08 h1:d0Bgr05cYK+mGhtBt5TnSfw9Y32uTLsJn1VFwCmQnLk=
 github.com/10nates/wordpos v0.0.0-20231214062347-35d49c903c08/go.mod h1:kmmvuQkPKgS2zTU5ZoDg01le/swKMgU1QRKPHFGKjL4=
 github.com/andersfylling/disgord v0.36.2 h1:jPQLtzgqdriOw2FcxE+hBxp5sWcEEmbNm4TPO1lxPUQ=

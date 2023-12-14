@@ -28,11 +28,11 @@ This may sound like any other bot at first, but this is **much** more than basic
 
 __LIST OF COMMANDS__
 ---
-### `@TRAS help` / `/help`
+### `@TRAS help` or `/help`
 > Summons a help list.
 > Slash command doesn't require DMs
  
-### `@TRAS about` / `/about`
+### `@TRAS about` or `/about`
 > Gives information about the bot. 
 > Add "NoCB" for devices that don't support links with command blocks.
 > Slash command doesn't require DMs

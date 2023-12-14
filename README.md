@@ -104,7 +104,7 @@ __LIST OF COMMANDS__
  
 ### `@TRAS commands`
 > View and manage custom server commands, managing requires administrator perms.
-> Custom commands feature requires TRAS Deluxe TBD.
+> Custom commands feature may require TRAS Deluxe in the future (TBD, currently not a thing).
 > 
 > Format: `@TRAS commands [manage/view] [(manage)...]`
 > Format (manage): `@TRAS commands manage [set/delete/schedule] [(set/delete)trigger//(schedule)time of day (hh:mm:ss)] [(set/schedule)reply]`
@@ -126,8 +126,9 @@ __LIST OF COMMANDS__
 ### `@TRAS speak`
 > Generate a sentence, plus toggle and get the status of random generated messages. 
 > Toggling requires "Manage Messages" permissions. Random messages are off by default.
+> Frequent generation may require TRAS Deluxe in the future (TBD, currently not a thing).
 > 
-> Format: `@TRAS speak [generate/randomspeak] [(randomspeak)on/off/status//(generate)starter]`
+> Format: `@TRAS speak [generate/randomspeak] [(randomspeak)on/off/status]`
  
 ### `@TRAS combinations`
 > Sends file with all possible combinations of the units you have selected and given.

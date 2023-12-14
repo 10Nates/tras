@@ -9,15 +9,11 @@ require (
 )
 
 require (
-	github.com/golang/protobuf v1.4.3 // indirect
-	github.com/google/go-cmp v0.5.5 // indirect
-	github.com/klauspost/compress v1.17.1 // indirect
-	github.com/stretchr/testify v1.7.0 // indirect
+	github.com/10nates/wordpos v0.0.0-20231213202542-fb313dc8657e
+	github.com/stretchr/testify v1.8.4 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	golang.org/x/crypto v0.14.0 // indirect
-	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
-	google.golang.org/protobuf v1.25.0 // indirect
-	gopkg.in/yaml.v2 v2.3.0 // indirect
-	nhooyr.io/websocket v1.8.7 // indirect
+	golang.org/x/crypto v0.16.0 // indirect
+	golang.org/x/net v0.19.0 // indirect
+	golang.org/x/sys v0.15.0 // indirect
+	nhooyr.io/websocket v1.8.10 // indirect
 )

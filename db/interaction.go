@@ -2,6 +2,7 @@ package db
 
 import (
 	"errors"
+	"time"
 
 	"github.com/andersfylling/disgord"
 	"github.com/andersfylling/snowflake/v5"
@@ -378,6 +379,44 @@ func (c *Connection) SetRandomSpeakAvailability(div Division, enabled bool) erro
 
 	// modify
 	divData.RandSpeak = enabled
+
+	// update divsion data
+	_, err = tx.Model(divData).WherePK().UpdateNotZero()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// need to commit because DivisionData is created
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
+}
+
+// Copy of SetDiceAvailability with time instead of boolean
+func (c *Connection) SetLastRandomSpeakTime(div Division, t time.Time) error {
+	// start transaction
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	// fetch division data
+	divData := &DivisionData{
+		Div: div,
+	}
+	_, err = tx.Model(divData).WherePK().SelectOrInsert()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// modify
+	divData.LastRandSpeak = t
 
 	// update divsion data
 	_, err = tx.Model(divData).WherePK().UpdateNotZero()

@@ -105,7 +105,7 @@ func main() {
 			// used for ranking and randomspeak
 
 			updateMemberProgress(evt.Message)
-			// TODO: randomspeak
+			executeRandSpeakRoll(evt.Message, &s)
 		})
 }
 
@@ -438,9 +438,10 @@ func parseCommand(msg *disgord.Message, s *disgord.Session) {
 	case "speak":
 		if len(argsl) > 1 && argsl[1] == "generate" {
 			if len(argsl) > 2 {
-				defaultTODOResponse(msg, s) // TODO: speak generate with starter
+				text := strings.Join(args[2:], " ") // case sensitive
+				randSpeakGenerateResponse(msg, s, text)
 			} else {
-				defaultTODOResponse(msg, s) // TODO: speak generate without starter
+				randSpeakGenerateResponse(msg, s, "")
 			}
 		} else if len(argsl) > 1 && argsl[1] == "randomspeak" {
 			if len(argsl) > 2 && (argsl[2] == "on" || argsl[2] == "off") {

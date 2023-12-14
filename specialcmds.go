@@ -275,3 +275,23 @@ func getRandSpeakInfo(msg *disgord.Message) (*RandSpeakData, error) {
 		LastRandSpeak: data.LastRandSpeak,
 	}, nil
 }
+
+func executeRandSpeakRoll(msg *disgord.Message, s *disgord.Session) error {
+	rsdata, err := getRandSpeakInfo(msg)
+	if err != nil {
+		return err
+	}
+
+	if !rsdata.status {
+		// randomSpeak disabled
+		return nil
+	}
+
+	probabilityWeight := -math.Pow(math.E, float64(rsdata.LastRandSpeak.Unix())*(-1/60.0)) + 1
+	if GRand.Float64()*25 < probabilityWeight { // max odds 1 in 25, min odds 0 (immediately after last randSpeak)
+		DBConn.SetLastRandomSpeakTime(getDivision(msg), time.Now())
+		randSpeakGenerateResponse(msg, s, "")
+	}
+
+	return nil
+}

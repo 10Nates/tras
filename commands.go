@@ -861,3 +861,13 @@ func asciiResponse(msg *disgord.Message, s *disgord.Session, font string, text s
 		baseReply(msg, s, "```\n"+resp+"```")
 	}
 }
+
+func randSpeakGenerateResponse(msg *disgord.Message, s *disgord.Session, starter string) {
+	// if starter != "" {
+	// 	defaultTODOResponse(msg, s) // TODO: speak generate with starter
+	// }
+	// Implementation halted until sentence generation method supports starters
+
+	sentence := generateTidiedSentence()
+	baseReply(msg, s, sentence)
+}

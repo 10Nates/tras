@@ -231,8 +231,8 @@ func baseReact(msg *disgord.Message, s *disgord.Session, emoji interface{}) {
 // simple response
 
 func defaultTODOResponse(msg *disgord.Message, s *disgord.Session) {
-	msgerr(errors.New("TODO"), msg, s)
-	// baseReply(msg, s, "This feature is incomplete. Don't worry, it's coming!")
+	// msgerr(errors.New("TODO"), msg, s)
+	baseReply(msg, s, "This feature is incomplete. Don't worry, it's coming!")
 }
 
 func defaultResponse(msg *disgord.Message, s *disgord.Session, successfulCustomCommand bool) {

@@ -105,6 +105,7 @@ __LIST OF COMMANDS__
 ### `@TRAS commands`
 > View and manage custom server commands, managing requires administrator perms.
 > Custom commands feature may require TRAS Deluxe in the future (TBD, currently not a thing).
+> Schedule feature not currently implemented.
 > 
 > Format: `@TRAS commands [manage/view] [(manage)...]`
 > Format (manage): `@TRAS commands manage [set/delete/schedule] [(set/delete)trigger//(schedule)time of day (hh:mm:ss)] [(set/schedule)reply]`

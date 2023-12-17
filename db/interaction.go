@@ -2,6 +2,7 @@ package db
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/andersfylling/disgord"
@@ -174,7 +175,7 @@ func (c *Connection) RemoveCustomCommand(key string, div Division) error {
 		return errors.New("does not exist")
 	}
 
-	// add command to database
+	// remove command from database
 	cmd = &CustomCommand{
 		ID: id,
 	}
@@ -426,6 +427,69 @@ func (c *Connection) SetLastRandomSpeakTime(div Division, t time.Time) error {
 	}
 
 	// need to commit because DivisionData is created
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
+}
+
+// For GDPR, removes user data from all guilds
+func (c *Connection) RemoveAllUserData(uID disgord.Snowflake) error {
+	return fmt.Errorf("not implemented") // TODO: GDPR Automation
+}
+
+// For GDPR, remove all division data
+func (c *Connection) RemoveAllDivisionData(div Division) error {
+	// start transaction
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	// fetch division data
+	divData := &DivisionData{
+		Div: div,
+	}
+	_, err = tx.Model(divData).WherePK().SelectOrInsert()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	for _, cc := range divData.Cmds {
+		// remove command from database
+		cmd := &CustomCommand{
+			ID: cc.ID,
+		}
+		_, err = tx.Model(cmd).WherePK().Delete()
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	for _, rm := range divData.RankMems {
+		// remove member from database
+		mem := &RankMember{
+			ID: rm.ID,
+		}
+		_, err = tx.Model(mem).WherePK().Delete()
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// Delete head
+	_, err = tx.Model(divData).WherePK().Delete()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		tx.Rollback()

@@ -489,7 +489,7 @@ func (c *Connection) RemoveAllDivisionData(div Division) error {
 	divData := &DivisionData{
 		Div: div,
 	}
-	_, err = tx.Model(divData).WherePK().SelectOrInsert()
+	err = tx.Model(divData).WherePK().Select()
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -533,4 +533,50 @@ func (c *Connection) RemoveAllDivisionData(div Division) error {
 	}
 
 	return nil
+}
+
+// For Cali laws, fetches all user data from all guilds
+func (c *Connection) FetchAllUserData(uID disgord.Snowflake) ([]*RankMember, error) {
+	// start transaction
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	// Select all divisions where member is in database
+	divData := []*DivisionData{}
+	err = tx.Model(divData).Where(`rank_mems @> '[{"UserID": ?}]'::jsonb;`, uID.String()).Select()
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	rankMemberData := []*RankMember{}
+
+	for i := range divData {
+		// find member
+		for _, mem := range divData[i].RankMems {
+			if mem.UserID == uint64(uID) {
+				// add to list
+				rankMemberData = append(rankMemberData, mem)
+			}
+		}
+	}
+
+	tx.Rollback() // Never update anything
+	return rankMemberData, nil
+}
+
+// For Cali laws, fetches all division data
+func (c *Connection) FetchAllDivisionData(div Division) (*DivisionData, error) {
+	divData := &DivisionData{
+		Div: div,
+	}
+
+	err := c.DB.Model(divData).WherePK().Select()
+	if err != nil {
+		return nil, err
+	}
+
+	return divData, nil
 }

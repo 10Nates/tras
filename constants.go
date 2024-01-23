@@ -10,7 +10,7 @@ const BOT_AUTHOR_ID = "186507006008360960"
 
 const FIGFONT_DIR = "src/figfonts/"
 
-const DB_HOST = "localhost"
+const DB_HOST = "db"
 
 const DB_PORT = 5432
 

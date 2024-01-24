@@ -8,6 +8,10 @@ services:
       - Token=${DISCORD_TOKEN}
     depends_on:
       - db
+    deploy:
+      restart_policy:
+        condition: any
+        delay: 5s
   
   db:
     image: bitnami/postgresql:16
@@ -16,6 +20,10 @@ services:
       - POSTGRESQL_DATABASE=tras
     volumes:
       - ./psql_tras_db:/bitnami/postgresql
+    deploy:
+      restart_policy:
+        condition: any
+        delay: 5s
   
 volumes:
   psql_tras_db:

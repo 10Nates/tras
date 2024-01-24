@@ -127,3 +127,4 @@ temp.txt
 *.prof
 tras
 src/data.json
+psql_tras_db/

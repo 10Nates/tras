@@ -127,8 +127,10 @@ temp.txt
 *.prof
 tras
 src/data.json
+psql_tras_db/
 
 # Docker specific
+.git/
 .gitignore
 Dockerfile
 docker-compose.yml

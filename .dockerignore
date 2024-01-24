@@ -131,6 +131,7 @@ psql_tras_db/
 
 # Docker specific
 .git/
+.github/
 .gitignore
 Dockerfile
 docker-compose.yml

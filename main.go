@@ -580,6 +580,8 @@ func parseCommand(msgPt MessagePassthrough, s *disgord.Session) {
 			pingResponse(false, msg, s, procTimeStart)
 		}
 	case "mydata":
+		defaultTODOResponse(msg, s)
+		return // feature incomplete
 		if len(argsl) > 1 && (argsl[1] == "user" || argsl[1] == "me") {
 			if len(argsl) > 2 && argsl[2] == "download" {
 

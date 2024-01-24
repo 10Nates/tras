@@ -10,7 +10,7 @@ const BOT_AUTHOR_ID = "186507006008360960"
 
 const FIGFONT_DIR = "src/figfonts/"
 
-const DB_HOST = "localhost"
+const DB_HOST = "db"
 
 const DB_PORT = 5432
 
@@ -35,7 +35,7 @@ Text Response Automation System
 ''''''py
 #################''''''md
 ## Links'''
-'- '['[Website]'](https://tras.almostd.one/)')
+'- '['[Website]'](https://tras.almostd.one/)
 '- '['[Add Link]'](https://bit.ly/gotras)
 '- '['[Top.gg Page]'](https://top.gg/bot/494273862427738113)
 '- '['[Community]'](https://discord.gg/nMprsNGewJ)

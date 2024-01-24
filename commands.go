@@ -552,8 +552,8 @@ func getUserRankInfo(msg *disgord.Message, s *disgord.Session, user disgord.Snow
 	}
 	levelStr := strconv.Itoa(level)
 	progStr := strconv.Itoa(int(rankMem.Progress))
-	nextMilestone := strconv.Itoa(int(math.Pow(float64(level+1), 2)))
-	baseReply(msg, s, "Level:"+levelStr+"\n"+"Progress:"+progStr+"/"+nextMilestone)
+	nextMilestone := strconv.Itoa(int(math.Pow(2, float64(level+1))))
+	baseReply(msg, s, "Level: "+levelStr+"\n"+"Progress: "+progStr+"/"+nextMilestone)
 }
 
 // simple replace

@@ -174,7 +174,7 @@ func (c *Connection) RemoveCustomCommand(key string, div Division) error {
 		return errors.New("does not exist")
 	}
 
-	// add command to database
+	// remove command from database
 	cmd = &CustomCommand{
 		ID: id,
 	}
@@ -203,7 +203,7 @@ func (c *Connection) RemoveCustomCommand(key string, div Division) error {
 }
 
 // https://stackoverflow.com/questions/37334119/how-to-delete-an-element-from-a-slice-in-golang
-func removeSliceItem(s []*CustomCommand, i int) []*CustomCommand {
+func removeSliceItem[T any](s []T, i int) []T {
 	s[i] = s[len(s)-1]
 	return s[:len(s)-1]
 }
@@ -433,4 +433,150 @@ func (c *Connection) SetLastRandomSpeakTime(div Division, t time.Time) error {
 	}
 
 	return nil
+}
+
+// For GDPR, removes user data from all guilds
+func (c *Connection) RemoveAllUserData(uID disgord.Snowflake) error {
+	// start transaction
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	// Select all divisions where member is in database
+	divData := []*DivisionData{}
+	err = tx.Model(divData).Where(`rank_mems @> '[{"UserID": ?}]'::jsonb;`, uID.String()).Select()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	for i := range divData {
+		// find member
+		for j, mem := range divData[i].RankMems {
+			if mem.UserID == uint64(uID) {
+				// remove member from division list
+				divData[i].RankMems = removeSliceItem(divData[i].RankMems, j)
+
+				// remove member from database
+				_, err = tx.Model(mem).WherePK().Delete()
+				if err != nil {
+					tx.Rollback()
+					return err
+				}
+			}
+		}
+
+		_, err := tx.Model(divData[i]).WherePK().UpdateNotZero()
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return nil
+}
+
+// For GDPR, remove all division data
+func (c *Connection) RemoveAllDivisionData(div Division) error {
+	// start transaction
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	// fetch division data
+	divData := &DivisionData{
+		Div: div,
+	}
+	err = tx.Model(divData).WherePK().Select()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	for _, cc := range divData.Cmds {
+		// remove command from database
+		cmd := &CustomCommand{
+			ID: cc.ID,
+		}
+		_, err = tx.Model(cmd).WherePK().Delete()
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	for _, rm := range divData.RankMems {
+		// remove member from database
+		mem := &RankMember{
+			ID: rm.ID,
+		}
+		_, err = tx.Model(mem).WherePK().Delete()
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// Delete head
+	_, err = tx.Model(divData).WherePK().Delete()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
+}
+
+// For Cali laws, fetches all user data from all guilds
+func (c *Connection) FetchAllUserData(uID disgord.Snowflake) ([]*RankMember, error) {
+	// start transaction
+	tx, err := c.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	// Select all divisions where member is in database
+	divData := []*DivisionData{}
+	err = tx.Model(divData).Where(`rank_mems @> '[{"UserID": ?}]'::jsonb;`, uID.String()).Select()
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	rankMemberData := []*RankMember{}
+
+	for i := range divData {
+		// find member
+		for _, mem := range divData[i].RankMems {
+			if mem.UserID == uint64(uID) {
+				// add to list
+				rankMemberData = append(rankMemberData, mem)
+			}
+		}
+	}
+
+	tx.Rollback() // Never update anything
+	return rankMemberData, nil
+}
+
+// For Cali laws, fetches all division data
+func (c *Connection) FetchAllDivisionData(div Division) (*DivisionData, error) {
+	divData := &DivisionData{
+		Div: div,
+	}
+
+	err := c.DB.Model(divData).WherePK().Select()
+	if err != nil {
+		return nil, err
+	}
+
+	return divData, nil
 }

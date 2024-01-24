@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  tras:
+    build: .
+    environment:
+      - DB_PASSWORD=${PSQL_PASSWORD}
+      - Token=${DISCORD_TOKEN}
+    depends_on:
+      - db
+  
+  db:
+    image: bitnami/postgresql:16
+    environment:
+      - POSTGRESQL_PASSWORD=${PSQL_PASSWORD}
+      - POSTGRESQL_DATABASE=tras
+    volumes:
+      - ./psql_tras_db:/bitnami/postgresql
+  
+volumes:
+  psql_tras_db:

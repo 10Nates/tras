@@ -579,6 +579,35 @@ func parseCommand(msgPt MessagePassthrough, s *disgord.Session) {
 		} else {
 			pingResponse(false, msg, s, procTimeStart)
 		}
+	case "mydata":
+		defaultTODOResponse(msg, s)
+		return // feature incomplete
+		if len(argsl) > 1 && (argsl[1] == "user" || argsl[1] == "me") {
+			if len(argsl) > 2 && argsl[2] == "download" {
+
+			} else if len(argsl) > 2 && argsl[2] == "delete" {
+
+			}
+		} else if len(argsl) > 1 && (argsl[1] == "server" || argsl[1] == "guild") {
+			// check for permissions
+			perms, err := getPerms(msg, s)
+			if err != nil {
+				msgerr(err, msg, s)
+				return
+			}
+			if !hasPerm(perms, disgord.PermissionAdministrator) {
+				baseReply(msg, s, "You don't have administrator permission. Sorry!")
+				return
+			}
+
+			if len(argsl) > 2 && argsl[2] == "download" {
+
+			} else if len(argsl) > 2 && argsl[2] == "delete" {
+
+			}
+		} else {
+			baseReply(msg, s, "Would you like to manage your [user] data or this [server]'s data?")
+		}
 	default:
 		defaultResponse(msg, s, successful_cc)
 	}

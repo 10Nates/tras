@@ -157,9 +157,7 @@ func baseDMReply(msg *disgord.Message, s *disgord.Session, reply string, h *disg
 				Flags:   disgord.MessageFlagEphemeral,
 			},
 		})
-		if err != nil {
-			msgerr(err, msg, s)
-		}
+		msgerr(err, msg, s)
 		return
 	}
 
@@ -207,9 +205,7 @@ func baseEmbedDMReply(msg *disgord.Message, s *disgord.Session, embeds []*disgor
 				Flags:  disgord.MessageFlagEphemeral,
 			},
 		})
-		if err != nil {
-			msgerr(err, msg, s)
-		}
+		msgerr(err, msg, s)
 		return
 	}
 
@@ -248,6 +244,34 @@ func baseTextFileReply(msg *disgord.Message, s *disgord.Session, content string,
 	})
 
 	msgerr(err, msg, s)
+}
+
+func baseTextFileDMReply(msg *disgord.Message, s *disgord.Session, content string, fileName string, fileContents string, h *disgord.InteractionCreate) {
+	if h != nil {
+		err := (*s).SendInteractionResponse(context.Background(), h, &disgord.CreateInteractionResponse{
+			Type: disgord.InteractionCallbackChannelMessageWithSource,
+			Data: &disgord.CreateInteractionResponseData{
+				Content: content,
+				Files: []disgord.CreateMessageFile{
+					{
+						FileName: fileName,
+						Reader:   strings.NewReader(fileContents),
+					},
+				},
+				Flags: disgord.MessageFlagEphemeral,
+			},
+		})
+		msgerr(err, msg, s)
+		return
+	}
+
+	if s == nil { // for testing, will never happen in the wild
+		discordless.HeadlessReply("(file) "+fileName+" - \n"+content, msg.Author.Email)
+		return
+	}
+
+	msgerr(errors.New("unimplemented"), msg, s)
+	// note - does not have standard logging when successful as it is often used for spammmy stuff
 }
 
 func baseReact(msg *disgord.Message, s *disgord.Session, emoji interface{}) {

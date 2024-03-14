@@ -445,7 +445,7 @@ func (c *Connection) RemoveAllUserData(uID disgord.Snowflake) error {
 
 	// Select all divisions where member is in database
 	divData := []*DivisionData{}
-	err = tx.Model(divData).Where(`rank_mems @> '[{"UserID": ?}]'::jsonb;`, uID.String()).Select()
+	err = tx.Model(&divData).Where(`rank_mems @> '[{"UserID": ?}]'::jsonb`, uint64(uID)).Select()
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -472,6 +472,12 @@ func (c *Connection) RemoveAllUserData(uID disgord.Snowflake) error {
 			tx.Rollback()
 			return err
 		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return err
 	}
 
 	return nil
@@ -536,7 +542,12 @@ func (c *Connection) RemoveAllDivisionData(div Division) error {
 }
 
 // For Cali laws, fetches all user data from all guilds
-func (c *Connection) FetchAllUserData(uID disgord.Snowflake) ([]*RankMember, error) {
+type RankMemberExport struct {
+	DivID  uint64
+	Member *RankMember
+}
+
+func (c *Connection) FetchAllUserData(uID disgord.Snowflake) ([]*RankMemberExport, error) {
 	// start transaction
 	tx, err := c.DB.Begin()
 	if err != nil {
@@ -545,20 +556,24 @@ func (c *Connection) FetchAllUserData(uID disgord.Snowflake) ([]*RankMember, err
 
 	// Select all divisions where member is in database
 	divData := []*DivisionData{}
-	err = tx.Model(divData).Where(`rank_mems @> '[{"UserID": ?}]'::jsonb;`, uID.String()).Select()
+	err = tx.Model(&divData).Where(`rank_mems @> '[{"UserID": ?}]'::jsonb`, uint64(uID)).Select() // cant use normal string insert
 	if err != nil {
+
 		tx.Rollback()
 		return nil, err
 	}
 
-	rankMemberData := []*RankMember{}
+	rankMemberData := []*RankMemberExport{}
 
 	for i := range divData {
 		// find member
 		for _, mem := range divData[i].RankMems {
 			if mem.UserID == uint64(uID) {
 				// add to list
-				rankMemberData = append(rankMemberData, mem)
+				rankMemberData = append(rankMemberData, &RankMemberExport{
+					DivID:  divData[i].Div.DivID,
+					Member: mem,
+				})
 			}
 		}
 	}

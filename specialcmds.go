@@ -2,6 +2,9 @@ package main
 
 import (
 	"db"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"math"
 	"math/rand"
 	"strconv"
@@ -294,4 +297,177 @@ func executeRandSpeakRoll(msg *disgord.Message, s *disgord.Session) error {
 	}
 
 	return nil
+}
+
+// -- Data Management --
+
+// helpers
+
+type dataMeDownloadRes struct {
+	Data []*db.RankMemberExport
+}
+
+type deleteNonce struct {
+	UserID disgord.Snowflake
+	DivID  uint64
+	Exp    time.Time
+	Val    string
+}
+
+var activeNonces = []deleteNonce{}
+
+func randomString(length int) string {
+	const charset = "ABCDEFGHIJKLMONPQRSTUVWXYZ"
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(b)
+}
+
+// handlers
+
+func dataMangementHandler(msg *disgord.Message, h *disgord.InteractionCreate, s *disgord.Session) {
+	target := h.Data.Options[0].Value.(string)
+	action := h.Data.Options[1].Value.(string)
+
+	switch target {
+	case "me":
+		// action branch
+		if action == "download" {
+			unformatted, err := DBConn.FetchAllUserData(msg.Author.ID)
+			if err != nil {
+				msgerr(err, msg, s)
+				return
+			}
+			// convert to json string
+			j, err := json.MarshalIndent(dataMeDownloadRes{Data: unformatted}, "", "  ")
+			if err != nil {
+				msgerr(err, msg, s)
+				return
+			}
+			baseTextFileDMReply(msg, s, "Here's your data, compiled fresh.", msg.Author.ID.String()+"-data.json", string(j), h)
+
+		} else if action == "delete" {
+			// trim expired nonces
+			for i, a := range activeNonces {
+				if a.Exp.Before(time.Now()) {
+					// https://stackoverflow.com/questions/37334119/how-to-delete-an-element-from-a-slice-in-golang
+					// order doesn't matter
+					activeNonces[i] = activeNonces[len(activeNonces)-1]
+					activeNonces = activeNonces[:len(activeNonces)-1]
+				}
+			}
+
+			if len(h.Data.Options) <= 2 {
+				// delete nonce generation
+				nonce := randomString(12)
+				activeNonces = append(activeNonces, deleteNonce{
+					UserID: msg.Author.ID,
+					DivID:  getDivision(msg).DivID,
+					Exp:    msg.Timestamp.Time.Add(2 * time.Minute),
+					Val:    nonce,
+				})
+				baseDMReply(msg, s, fmt.Sprintf("## Are you *sure* you want to delete your TRAS data? **This action is PERMANENT** and applies to **EVERY server you are in.**\n\n*Note: This does not include DM pseudo-server data, which must be removed separately.*\n\n> Run the command `/mydata target:me action:delete confirmdelete:%s` within the next 2 minutes to confirm.", nonce), h)
+				return
+			}
+
+			// delete user data if confirmdelete matches nonce
+			for i, a := range activeNonces {
+				// time preverified with previous trim
+				// 				verify nonce							verify user						verify location
+				if h.Data.Options[2].Value.(string) == a.Val && msg.Author.ID == a.UserID && getDivision(msg).DivID == a.DivID {
+
+					err := DBConn.RemoveAllUserData(a.UserID)
+					if err != nil {
+						msgerr(err, msg, s)
+						return
+					}
+
+					activeNonces[i] = activeNonces[len(activeNonces)-1]
+					activeNonces = activeNonces[:len(activeNonces)-1]
+
+					baseDMReply(msg, s, "Your data has been deleted. You are now a clean slate in TRAS-land.", h)
+					return
+				}
+			}
+
+			baseDMReply(msg, s, "Your confirmation could not be verified. Are you sure you typed it correctly?", h)
+		}
+
+	case "server":
+		// check for perms
+		perms, err := getPerms(msg, s)
+		if err != nil {
+			msgerr(err, msg, s)
+			return
+		}
+		if !hasPerm(perms, disgord.PermissionAdministrator) {
+			baseDMReply(msg, s, "You don't have Administrator permissions.", h)
+			return
+		}
+
+		// action branch
+		if action == "download" {
+			unformatted, err := DBConn.FetchAllDivisionData(getDivision(msg))
+			if err != nil {
+				msgerr(err, msg, s)
+				return
+			}
+			// convert to json string
+			j, err := json.MarshalIndent(unformatted, "", "  ")
+			if err != nil {
+				msgerr(err, msg, s)
+			}
+			baseTextFileDMReply(msg, s, "Here's your server's data, compiled fresh.", h.GuildID.String()+"-data.json", string(j), h)
+
+		} else if action == "delete" {
+			// trim expired nonces
+			for i, a := range activeNonces {
+				if a.Exp.Before(time.Now()) {
+					// https://stackoverflow.com/questions/37334119/how-to-delete-an-element-from-a-slice-in-golang
+					// order doesn't matter
+					activeNonces[i] = activeNonces[len(activeNonces)-1]
+					activeNonces = activeNonces[:len(activeNonces)-1]
+				}
+			}
+
+			if len(h.Data.Options) <= 2 {
+				// delete nonce generation
+				nonce := randomString(12)
+				activeNonces = append(activeNonces, deleteNonce{
+					UserID: msg.Author.ID,
+					DivID:  getDivision(msg).DivID,
+					Exp:    time.Now().Add(2 * time.Minute),
+					Val:    nonce,
+				})
+				baseDMReply(msg, s, fmt.Sprintf("## Are you *sure* you want to delete this server's TRAS data? **This action is PERMANENT.**\n\n> Run the command `/mydata target:server action:delete confirmdelete:%s` within the next 2 minutes to confirm.", nonce), h)
+				return
+			}
+
+			// delete server data if confirmdelete matches nonce
+			for i, a := range activeNonces {
+				// time preverified with previous trim
+				// 				verify nonce							verify user						verify location
+				if h.Data.Options[2].Value.(string) == a.Val && msg.Author.ID == a.UserID && getDivision(msg).DivID == a.DivID {
+					err := DBConn.RemoveAllDivisionData(getDivision(msg))
+					if err != nil {
+						msgerr(err, msg, s)
+						return
+					}
+
+					activeNonces[i] = activeNonces[len(activeNonces)-1]
+					activeNonces = activeNonces[:len(activeNonces)-1]
+
+					baseDMReply(msg, s, "The server's data has been deleted. It is now a clean slate in TRAS-land.", h)
+					return
+				}
+			}
+
+			baseDMReply(msg, s, "Your confirmation could not be verified. Are you sure you typed it correctly?", h)
+		}
+
+	default:
+		msgerr(errors.New("invalid command structure"), msg, s)
+	}
 }

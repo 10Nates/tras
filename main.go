@@ -32,6 +32,38 @@ var slashCommands = []*disgord.CreateApplicationCommand{
 		Name:        "about",
 		Description: "Alternative to @TRAS about. view about command without a DM.",
 	},
+	{
+		Name:        "mydata",
+		Description: "Download and delete data from the TRAS database.",
+		Options: []*disgord.ApplicationCommandOption{
+			{
+				Name:        "target",
+				Description: "Specify if data is for the server or user.",
+				Type:        disgord.OptionTypeString,
+				Required:    true,
+				Choices: []*disgord.ApplicationCommandOptionChoice{
+					{Name: "me", Value: "me"},
+					{Name: "server", Value: "server"},
+				},
+			},
+			{
+				Name:        "action",
+				Description: "Specify what to do with the data.",
+				Type:        disgord.OptionTypeString,
+				Required:    true,
+				Choices: []*disgord.ApplicationCommandOptionChoice{
+					{Name: "download", Value: "download"},
+					{Name: "delete", Value: "delete"},
+				},
+			},
+			{
+				Name:        "confirmdelete",
+				Description: "Confirm the deletion of data.",
+				Type:        disgord.OptionTypeString,
+				Required:    false,
+			},
+		},
+	},
 }
 
 type MessagePassthrough struct {
@@ -121,13 +153,17 @@ func main() {
 			if h.Member != nil {
 				user = h.Member.User
 			}
+			content := "<@" + BotID + "> " + h.Data.Name
+			for _, option := range h.Data.Options {
+				content += " " + option.Value.(string)
+			}
 			msgConvert := &disgord.Message{
 				ID:              0, // Tag with no original message
 				ChannelID:       h.ChannelID,
 				GuildID:         h.GuildID,
 				Author:          user,
 				Member:          h.Member,
-				Content:         "<@" + BotID + "> " + h.Data.Name,
+				Content:         content,
 				Timestamp:       disgord.Time{Time: time.Now()},
 				EditedTimestamp: disgord.Time{Time: time.Now()},
 				Mentions:        []*disgord.User{BotUser},
@@ -580,33 +616,11 @@ func parseCommand(msgPt MessagePassthrough, s *disgord.Session) {
 			pingResponse(false, msg, s, procTimeStart)
 		}
 	case "mydata":
-		defaultTODOResponse(msg, s)
-		return // feature incomplete
-		if len(argsl) > 1 && (argsl[1] == "user" || argsl[1] == "me") {
-			if len(argsl) > 2 && argsl[2] == "download" {
-
-			} else if len(argsl) > 2 && argsl[2] == "delete" {
-
-			}
-		} else if len(argsl) > 1 && (argsl[1] == "server" || argsl[1] == "guild") {
-			// check for permissions
-			perms, err := getPerms(msg, s)
-			if err != nil {
-				msgerr(err, msg, s)
-				return
-			}
-			if !hasPerm(perms, disgord.PermissionAdministrator) {
-				baseReply(msg, s, "You don't have administrator permission. Sorry!")
-				return
-			}
-
-			if len(argsl) > 2 && argsl[2] == "download" {
-
-			} else if len(argsl) > 2 && argsl[2] == "delete" {
-
-			}
+		if msgPt.Interaction == nil {
+			// I would have to implement this charade twice if I didn't do this
+			baseReply(msg, s, "For security and compatibility purposes, please use the /mydata command.")
 		} else {
-			baseReply(msg, s, "Would you like to manage your [user] data or this [server]'s data?")
+			dataMangementHandler(msg, msgPt.Interaction, s)
 		}
 	default:
 		defaultResponse(msg, s, successful_cc)

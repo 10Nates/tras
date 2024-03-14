@@ -400,6 +400,10 @@ func helpResponse(msg *disgord.Message, s *disgord.Session, h *disgord.Interacti
 				Value: "Set the bot's Nickname on the server. Reset with '{RESET}'. Requires 'Manage Messages' or 'Change Nicknames'.\n*Format: @TRAS set nickname [nickname/{RESET}]*",
 			},
 			{
+				Name:  "_ _\n/mydata",
+				Value: "Download and delete data you own from the TRAS database. For data protection compliance. Slash only. Server data management requires administrator.\n*Format: /mydata target:[me/server] action:[download/delete]*",
+			},
+			{
 				Name:  "_ _\n@TRAS speak",
 				Value: "Generate a sentence, plus toggle and get the status of random generated messages. Toggling requires 'Manage Messages' perms. Random messages off by default.\n*Format: @TRAS speak [generate/randomspeak] [(randomspeak)on/off/status]*",
 			},

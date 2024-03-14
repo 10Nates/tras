@@ -118,13 +118,19 @@ __LIST OF COMMANDS__
 > 
 > Format: `@TRAS rank [info/checkDice/dice] [(info)-real]`
 > Format (admin): `@TRAS rank [set/reset/toggleDice] [(set/reset)user] [value]`
- 
+
 ### `@TRAS set nickname`
 > Set the bot's Nickname on the server. Reset with "{RESET}". 
 > Requires "Manage Messages" or "Change Nicknames".
 > 
 > Format: `@TRAS set nickname [nickname/{RESET}]`
 > Reset alternative: `@TRAS reset nickname`
+ 
+### `/mydata`
+> Download and delete data you own from the TRAS database. For data protection compliance. Slash only.
+> Server data management requires administrator.
+>
+> Format: `/mydata target:[me/server] action:[download/delete]`
  
 ### `@TRAS speak`
 > Generate a sentence, plus toggle and get the status of random generated messages. 
@@ -185,4 +191,4 @@ __GENERAL DETAILS__
 <br>
 <br>
 
-## Copyright (c) 2023 Nathan B. (10Nates)
+## Copyright (c) 2024 Nathan B. (10Nates)

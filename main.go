@@ -34,7 +34,7 @@ var slashCommands = []*disgord.CreateApplicationCommand{
 	},
 	{
 		Name:        "mydata",
-		Description: "Download and delete data from the TRAS database.",
+		Description: "Download and delete data you own from the TRAS database.",
 		Options: []*disgord.ApplicationCommandOption{
 			{
 				Name:        "target",
